@@ -9,7 +9,7 @@ Barge lets you quickly compose networked distributed systems from a collection o
 
 Define a service:
 
-```
+```js
 BargeService = require '../barge-service'
 
 # Create a new Barge service named 'hello' listening on localhost:5555
@@ -28,7 +28,7 @@ hello_service.register()
 
 Define a client:
 
-```
+```js
 BargeClient = require '../barge-client'
 
 # Create a new Barge client
@@ -41,7 +41,7 @@ hello_client.remote 'hello', 'sayHello', 'world', (err, response) ->
 
 Start the registry and service, then run the client:
 
-```
+```sh
 > coffee barge-registry.coffee &
 Barge registry listening on localhost:9910...
 
