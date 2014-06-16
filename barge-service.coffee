@@ -16,7 +16,6 @@ class BargeBinding
 
     constructor: (options={}) ->
         @id = @id || randomString()
-        log "Created id: " + @id
 
         @proto = options.proto || DEFAULT_PROTO
         @host = DEFAULT_BIND
@@ -37,27 +36,36 @@ class BargeBinding
         log "<#{ client_id }>: #{ util.inspect message }" if VERBOSE
 
 class BargeService
+    methods: {}
 
-    constructor: (options) ->
-        registry_options = options.registry
-        service_options = options.service
+    constructor: (@service_options) ->
+        @service_binding = new BargeBinding @service_options
+        @service_binding.handleMessage = @handleMessage.bind(@)
 
-        @registry_connection = new BargeRegistryConnection registry_options
-        @registry_connection.register service_options
+    handleMessage: (client_id, message) =>
+        log "<#{ client_id }>: #{ util.inspect message }" if VERBOSE
 
-        @service_binding = new BargeBinding service_options
-        @service_binding.handleMessage = (client_id, message) =>
-            log "<#{ client_id }>: #{ util.inspect message }" if VERBOSE
-            if _method = @[message.method]
-                log 'Executing ' + message.method
-                _method message.args..., (response) =>
-                    console.log "Got: " + response
-                    @service_binding.send client_id,
-                        id: message.id
-                        type: 'response'
-                        response: response
-            else
-                log 'No method ' + message.method, color: 'yellow'
+        # Find the method
+        if _method = @methods[message.method]
+
+            # Execute the method with the arguments
+            log 'Executing ' + message.method if VERBOSE
+            _method message.args..., (err, response) =>
+
+                # Respond to the client
+                @service_binding.send client_id,
+                    id: message.id
+                    type: 'response'
+                    response: response
+
+        # Method not found for this service
+        else
+            # TODO: Send a failure message to client
+            log 'No method ' + message.method, color: 'yellow'
+
+    register: (@registry_options) ->
+        @registry_connection = new BargeRegistryConnection @registry_options
+        @registry_connection.register @service_options
 
 module.exports = BargeService
 

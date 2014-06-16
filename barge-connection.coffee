@@ -16,7 +16,6 @@ module.exports = class BargeConnection
 
     connect: (options) ->
         @id = options.id || randomString()
-        log "Created id: " + @id
 
         @proto = options.proto || DEFAULT_PROTO
         @host = options.host || DEFAULT_CONNECT
