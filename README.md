@@ -19,7 +19,7 @@ hello_service = new BargeService
     port: 5555
 
 # Define a method which takes a callback to send data to the client
-hello_service.sayHello = (name, cb) ->
+hello_service.methods.sayHello = (name, cb) ->
     cb null, 'Hello, ' + name + '!'
 
 # Register with the registry
