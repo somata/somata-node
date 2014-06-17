@@ -5,8 +5,8 @@ BargeConnection = require './barge-connection'
 
 class BargeClient
 
-    constructor: (options={}) ->
-        @registrar_connection = new BargeConnection
+    constructor: (@options={}) ->
+        @registrar_connection = new BargeConnection @options.registry
 
     sendQuery: (service_name, on_response) ->
         @registrar_connection.send
@@ -29,9 +29,7 @@ class BargeClient
 
         # Connect to service
         connectToService = (service) ->
-            service_connection = new BargeConnection
-                host: service.host
-                port: service.port
+            service_connection = new BargeConnection service.binding
             sendMethod service_connection
 
         # Send method to service

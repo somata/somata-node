@@ -2,47 +2,63 @@ util = require 'util'
 zmq = require 'zmq'
 {log, randomString} = require './helpers'
 _ = require 'underscore'
-BargeConnection = require './barge-connection'
+BargeBinding = require './barge-binding'
 BargeRegistryConnection = require './barge-registry-connection'
 
 VERBOSE = true
-DEFAULT_PROTO = 'tcp'
-DEFAULT_BIND = '0.0.0.0'
-DEFAULT_PORT = 9910
 
 module.exports = barge = {}
 
-class BargeBinding
-
-    constructor: (options={}) ->
-        @id = @id || randomString()
-
-        @proto = options.proto || DEFAULT_PROTO
-        @host = DEFAULT_BIND
-        @port = options.port || DEFAULT_PORT
-        @address = @proto + '://' + @host + ':' + @port
-
-        @socket = zmq.socket 'router'
-        @socket.bindSync @address
-        @socket.on 'message', (client_id, message_json) =>
-            @handleMessage client_id.toString(), JSON.parse message_json
-
-        log "Bound to #{ @address }..."
-
-    send: (client_id, message) ->
-        @socket.send [ client_id, JSON.stringify message ]
-
-    handleMessage: (client_id, message) ->
-        log "<#{ client_id }>: #{ util.inspect message }" if VERBOSE
-
 class BargeService
+
     methods: {}
 
-    constructor: (@service_options) ->
-        @service_binding = new BargeBinding @service_options
-        @service_binding.handleMessage = @handleMessage.bind(@)
+    # Instatiate a Barge service
+    # --------------------------------------------------------------------------
 
-    handleMessage: (client_id, message) =>
+    constructor: (@options={}) ->
+        # Copy methods over from options
+        _.extend @methods, @options.methods if @options.methods?
+
+        # Bind and register
+        @service_binding = new BargeBinding @options.binding
+        @bind()
+        @registry_connection = new BargeRegistryConnection @options.registry
+        @register()
+
+    # Bind the service socket
+    # --------------------------------------------------------------------------
+
+    bind: ->
+        @service_binding.handleMessage = @handleClientMessage.bind(@)
+
+    # Create a connection to the Barge registry
+    # --------------------------------------------------------------------------
+
+    register: ->
+        @registry_connection.register
+            name: @options.name
+            binding: @options.binding
+        @registry_connection.handleMessage = @handleRegistryMessage.bind(@)
+
+    # Handle a message from the registry
+    # --------------------------------------------------------------------------
+    #
+    # If the message is the `register?` command, re-register
+
+    handleRegistryMessage: (message) =>
+        log "<registry>: #{ util.inspect message }" if VERBOSE
+
+        if message.command == 'register?'
+            @register()
+
+    # Handle a message from a client
+    # --------------------------------------------------------------------------
+    # 
+    # Looks for the requested method in `@methods` and executes it with the
+    # arguments contained in the message
+
+    handleClientMessage: (client_id, message) =>
         log "<#{ client_id }>: #{ util.inspect message }" if VERBOSE
 
         # Find the method
@@ -61,11 +77,7 @@ class BargeService
         # Method not found for this service
         else
             # TODO: Send a failure message to client
-            log 'No method ' + message.method, color: 'yellow'
-
-    register: (@registry_options) ->
-        @registry_connection = new BargeRegistryConnection @registry_options
-        @registry_connection.register @service_options
+            log.i 'No method ' + message.method
 
 module.exports = BargeService
 

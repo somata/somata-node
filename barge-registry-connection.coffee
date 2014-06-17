@@ -4,34 +4,53 @@ util = require 'util'
 BargeConnection = require './barge-connection'
 
 VERBOSE = true
-HEARTBEAT_INTERVAL = 5000
+HEARTBEAT_MS = 5000
 
-module.exports = class BargeRegistrarConnection extends BargeConnection
-    constructor: (@registry_options={}, @service_options={}) ->
-        @connect @registry_options
+module.exports = class BargeRegistryConnection extends BargeConnection
 
-    handleMessage: (message) ->
-        log ">: #{ util.inspect message }" if VERBOSE
-        if message.command == 'register?'
-            @sendRegister()
+    heartbeat_ms: HEARTBEAT_MS
 
-    register: (options) ->
-        @sendRegister options
+    # Register with the Barge registry and start sending heartbeats
+    # --------------------------------------------------------------------------
+    #
+    # When the process is quit, send an `unregister` command before exiting
+
+    register: (service) ->
+        @sendRegister service
         @startHeartbeats()
 
         process.on 'SIGINT', =>
             @sendUnregister()
             process.exit()
 
-    sendRegister: (options) ->
+    # Handle a message from the registry
+    # --------------------------------------------------------------------------
+    #
+    # If the message is the `register?` command, re-register 
+
+    handleMessage: (message) ->
+        log ">: #{ util.inspect message }" if VERBOSE
+
+    # Send a `register` message to the registry
+    # --------------------------------------------------------------------------
+    #
+    # Extends the service's address information {host, port} with
+    # the connection's socket id
+
+    sendRegister: (service) ->
         @send
             type: 'register'
-            args: _.extend options,
-                id: @id
+            args: _.extend service, id: @id
+
+    # Send an `unregister` message to the registry
+    # --------------------------------------------------------------------------
 
     sendUnregister: ->
         @send
             type: 'unregister'
+
+    # Send a `heartbeat` message to the registry
+    # --------------------------------------------------------------------------
 
     sendHeartbeat: ->
         @send
@@ -40,6 +59,10 @@ module.exports = class BargeRegistrarConnection extends BargeConnection
                 id: @id
                 name: @name
 
+    # Start sending heartbeats at an interval
+    # --------------------------------------------------------------------------
+
     startHeartbeats: ->
-        setInterval (=> @sendHeartbeat.call(@)), HEARTBEAT_INTERVAL
+        clearInterval @heartbeat_interval
+        @heartbeat_interval = setInterval @sendHeartbeat.bind(@), @heartbeat_ms
 
