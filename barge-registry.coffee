@@ -59,9 +59,9 @@ class BargeRegistry
         service = message.args
         service.client_id = client_id
         if !@registered_clients[client_id]?
-            log "New service registered: #{ service.name } (#{ client_id })", color: 'yellow'
+            log.i "New service registered: #{ service.name } (#{ client_id })"
         else
-            log "Re-registering service: #{ service.name } (#{ client_id })", color: 'yellow'
+            log.i "Re-registering service: #{ service.name } (#{ client_id })"
 
         if !@registered_services[service.name]
             @registered_services[service.name] = []
@@ -73,7 +73,7 @@ class BargeRegistry
         if service = @registered_services[client_id]
             service_name = @registered_services[client_id].name
             delete @registered_services[client_id]
-            log "Unregistered service: #{ service_name } <#{ client_id }>", color: 'red'
+            log.e "Unregistered service: #{ service_name } <#{ client_id }>"
 
     handleHeartbeat: (client_id, message) ->
         now = new Date().getTime()

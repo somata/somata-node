@@ -11,12 +11,15 @@ logDate = ->
     ansi.reset()
 
 # Colored, timestamped log output
-exports.log = (s, options={}) ->
+exports.log = log = (s, options={}) ->
     logDate() if !options.date? or options.date
     ansi.hex(options.hex) if options.hex?
     ansi.fg[options.color]() if options.color?
     ansi.write s + '\n'
     ansi.reset()
+log.i = (s) -> log s, color: 'yellow'
+log.e = (s) -> log s, color: 'red'
+log.d = (s) -> log s, color: 'grey'
 
 # Avoid wasting time on static resources
 static_exts = ['css','js','jpg','png','gif','woff', 'svg']
