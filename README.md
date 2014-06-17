@@ -1,4 +1,4 @@
-barge
+Barge
 =====
 
 Node.js micro-service &amp; service-registry framework; inspired by Seaport and ZeroRPC
@@ -12,18 +12,32 @@ Define a service:
 ```coffee
 BargeService = require '../barge-service'
 
-# Create a new Barge service named 'hello' listening on localhost:5555
+# Create a new Barge service ...
 hello_service = new BargeService
+
+    # ... named 'hello'...
     name: 'hello'
-    host: 'localhost'
-    port: 5555
 
-# Define a method which takes a callback to send data to the client
-hello_service.methods.sayHello = (name, cb) ->
-    cb null, 'Hello, ' + name + '!'
+    # ... listening at localhost:5555 ...
+    binding:
 
-# Register with the registry
-hello_service.register()
+        host: 'localhost'
+        port: 5555
+
+    # ... connected to the registry at localhost:8555 ...
+    registry:
+
+        host: 'localhost'
+        port: 8885
+
+    # ... with these methods.
+    methods:
+
+        sayHello: (name, cb) ->
+            cb null, 'Hello, ' + name + '!'
+
+        sayGoodbye: (name, cb) ->
+            cb null, 'Goodbye, cruel ' + name + '!'
 ```
 
 Define a client:
@@ -31,19 +45,32 @@ Define a client:
 ```coffee
 BargeClient = require '../barge-client'
 
-# Create a new Barge client
+# Create a new Barge client ...
 hello_client = new BargeClient
 
-# Execute the 'hello' service's `sayHello` method with the argument 'world'
-hello_client.remote 'hello', 'sayHello', 'world', (err, response) ->
-    console.log '[hello.sayHello] response: ' + response
+    # ... connected to the registry at localhost:8555
+    registry:
+
+        host: 'localhost'
+        port: 8885
+
+# Execute the 'hello' service's `sayHello` method with the argument 'world' ...
+hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->
+
+    # ... then execute hello.sayGoodbye('world')
+    hello_client.remote 'hello', 'sayGoodbye', 'world', (err, goodbye_response) ->
+
+        # ... then print the responses and leave
+        console.log '[hello.sayHello] response: ' + hello_response
+        console.log '[hello.sayGoodbye] response: ' + goodbye_response
+        process.exit()
 ```
 
 Start the registry and service, then run the client:
 
 ```sh
-$ coffee barge-registry.coffee &
-Barge registry listening on localhost:9910...
+$ coffee barge-registry.coffee --port 8885 &
+Barge registry listening on localhost:8885...
 
 $ coffee hello-service.coffee &
 Barge service listening on localhost:5555...
@@ -51,3 +78,4 @@ Barge service listening on localhost:5555...
 $ coffee hello-client.coffee
 [hello.sayHello] response: Hello, world!
 ```
+

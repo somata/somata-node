@@ -1,15 +1,29 @@
 BargeService = require '../barge-service'
 
-# Create a new Barge service named 'hello' listening on localhost:5555
+# Create a new Barge service ...
 hello_service = new BargeService
+
+    # ... named 'hello'...
     name: 'hello'
-    host: 'localhost'
-    port: 5555
 
-# Define a method which takes a callback to send data to the client
-hello_service.methods.sayHello = (name, cb) ->
-    cb null, 'Hello, ' + name + '!'
+    # ... listening at localhost:5555 ...
+    binding:
 
-# Register with the registry
-hello_service.register()
+        host: 'localhost'
+        port: 5555
+
+    # ... connected to the registry at localhost:8555 ...
+    registry:
+
+        host: 'localhost'
+        port: 8885
+
+    # ... with these methods.
+    methods:
+
+        sayHello: (name, cb) ->
+            cb null, 'Hello, ' + name + '!'
+
+        sayGoodbye: (name, cb) ->
+            cb null, 'Goodbye, cruel ' + name + '!'
 
