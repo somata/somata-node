@@ -68,6 +68,8 @@ class BargeRegistry
         @registered_services[service.name].push service
         @registered_clients[client_id] = service
         @registered_clients[client_id].last_seen = new Date().getTime()
+        if @pending_registrations[client_id]?
+            delete @pending_registrations[client_id]
 
     handleUnregister: (client_id) ->
         if service = @registered_services[client_id]
@@ -107,5 +109,12 @@ class BargeRegistry
                 id: message.id
                 service: null
 
-new BargeRegistry()
+# Stand-alone mode
+if require.main == module
+
+    # Parse options from command line with minimist
+    minimist = require 'minimist'
+    argv = minimist process.argv.slice 2
+
+    new BargeRegistry argv
 
