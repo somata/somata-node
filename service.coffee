@@ -3,17 +3,12 @@ util = require 'util'
 zmq = require 'zmq'
 {log, randomString} = require './helpers'
 _ = require 'underscore'
-Binding = require './binding'
-RegistryConnection = require './registry-connection'
+Barge = require './'
 
 VERBOSE = false
 
 randomPort = ->
     10000 + Math.floor(Math.random()*50000)
-
-REGISTRY_DEFAULTS =
-    host: 'localhost'
-    port: 9910
 
 class Service
 
@@ -31,12 +26,12 @@ class Service
         @options.binding.host ||= os.hostname()
         @options.binding.port ||= randomPort()
 
-        @options.registry ||= REGISTRY_DEFAULTS
+        @options.registry ||= Barge.Registry.DEFAULTS
 
         # Bind and register
-        @service_binding = new Binding @options.binding
+        @service_binding = new Barge.Binding @options.binding
         @bind()
-        @registry_connection = new RegistryConnection @options.registry
+        @registry_connection = new Barge.RegistryConnection @options.registry
         @register()
 
     # Bind the service socket

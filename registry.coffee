@@ -4,14 +4,15 @@ zmq = require 'zmq'
 _ = require 'underscore'
 
 VERBOSE = true
-DEFAULT_PROTO = 'tcp'
-DEFAULT_BIND = '0.0.0.0'
-DEFAULT_PORT = 9910
 HEARTBEAT_INTERVAL = 5000
 HEARTBEAT_TIMEOUT = HEARTBEAT_INTERVAL * 5
 REGISTRATION_TIMEOUT = HEARTBEAT_INTERVAL * 5
 
-module.exports = barge = {}
+exports.DEFAULTS = REGISTRY_DEFAULTS =
+    proto: 'tcp'
+    bind: '0.0.0.0'
+    host: process.env.BARGE_REGISTRY_HOST || 'localhost'
+    port: process.env.BARGE_REGISTRY_PORT || 9910
 
 class BargeRegistry
 
@@ -20,10 +21,8 @@ class BargeRegistry
     registered_clients: {}
 
     constructor: (options={}) ->
-        @proto = options.proto || DEFAULT_PROTO
-        @host = options.host || DEFAULT_BIND
-        @port = options.port || DEFAULT_PORT
-        @address = @proto + '://' + @host + ':' + @port
+        options = _.defaults options, REGISTRY_DEFAULTS
+        @address = options.proto + '://' + options.bind + ':' + options.port
 
         @socket = zmq.socket 'router'
         @socket.bindSync @address
