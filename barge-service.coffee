@@ -5,7 +5,7 @@ _ = require 'underscore'
 BargeBinding = require './barge-binding'
 BargeRegistryConnection = require './barge-registry-connection'
 
-VERBOSE = true
+VERBOSE = false
 
 module.exports = barge = {}
 
@@ -47,7 +47,7 @@ class BargeService
     # If the message is the `register?` command, re-register
 
     handleRegistryMessage: (message) =>
-        log "<registry>: #{ util.inspect message }" if VERBOSE
+        log "<registry>: #{ util.inspect message, depth: null }" if VERBOSE
 
         if message.command == 'register?'
             @register()
@@ -59,7 +59,7 @@ class BargeService
     # arguments contained in the message
 
     handleClientMessage: (client_id, message) =>
-        log "<#{ client_id }>: #{ util.inspect message }" if VERBOSE
+        log "<#{ client_id }>: #{ util.inspect message, depth: null }" if VERBOSE
 
         # Find the method
         if _method = @methods[message.method]
