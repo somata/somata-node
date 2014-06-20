@@ -38,3 +38,8 @@ exports.randomString = (len=8) ->
 # Choose a random item from an array
 exports.randomChoice = (l) ->
     l[Math.floor(Math.random() * l.length)]
+
+# Summarize a service
+exports.serviceSummary = (service) ->
+    return service.name + '@' + service.binding.host + ':' + service.binding.port
+
