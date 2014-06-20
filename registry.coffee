@@ -72,10 +72,10 @@ class BargeRegistry
             delete @pending_registrations[client_id]
 
     handleUnregister: (client_id) ->
-        if service = @registered_services[client_id]
-            service_name = @registered_services[client_id].name
-            delete @registered_services[client_id]
-            log.e "Unregistered service: #{ service_name } <#{ client_id }>"
+        if service = @registered_clients[client_id]
+            @registered_services = _.without @registered_services, service
+            delete @registered_clients[client_id]
+            log.e "Unregistered service: #{ service.name } <#{ client_id }>"
 
     handleHeartbeat: (client_id, message) ->
         now = new Date().getTime()
