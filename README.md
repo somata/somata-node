@@ -1,7 +1,7 @@
 Barge
 =====
 
-Node.js micro-service &amp; service-registry framework; inspired by Seaport and ZeroRPC
+Node.js micro-service orchestration framework; inspired by Seaport and ZeroRPC
 
 Barge lets you quickly compose networked distributed systems from a collection of services. Services register their network location with the Barge registry, clients query for available services and connect to use their methods from afar.
 
