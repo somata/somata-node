@@ -3,7 +3,7 @@ util = require 'util'
 _ = require 'underscore'
 {log, randomString} = require './helpers'
 
-VERBOSE = true
+VERBOSE = false
 DEFAULT_PROTO = 'tcp'
 DEFAULT_CONNECT = 'localhost'
 DEFAULT_PORT = 9910
@@ -77,4 +77,7 @@ module.exports = class BargeConnection
         if on_response?
             @pending_responses[message.id] = on_response
         return message
+
+    close: ->
+        @socket.close()
 
