@@ -6,9 +6,8 @@ _ = require 'underscore'
 VERBOSE = false
 DEFAULT_PROTO = 'tcp'
 DEFAULT_CONNECT = 'localhost'
-DEFAULT_PORT = 9910
 
-module.exports = class BargeConnection
+module.exports = class Connection
 
     # Store pending response callbacks
     # --------------------------------------------------------------------------
@@ -34,7 +33,6 @@ module.exports = class BargeConnection
 
         @proto ||= DEFAULT_PROTO
         @host ||= DEFAULT_CONNECT
-        @port ||= DEFAULT_PORT
         @address = @proto + '://' + @host + ':' + @port
 
         @connect()

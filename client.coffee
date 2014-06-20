@@ -1,17 +1,17 @@
 util = require 'util'
 {log, randomString, serviceSummary} = require './helpers'
 _ = require 'underscore'
-BargeConnection = require './barge-connection'
+Connection = require './connection'
 
-class BargeClient
+class Client
 
     service_connections: {}
 
     constructor: (@options={}) ->
-        @registrar_connection = new BargeConnection @options.registry
+        @registry_connection = new Connection @options.registry
 
     sendQuery: (service_name, on_response) ->
-        @registrar_connection.send
+        @registry_connection.send
             type: 'query'
             args:
                 service_name: service_name
@@ -53,7 +53,7 @@ class BargeClient
 
     # Connect to service if it isn't already connected
     connectToService: (service) ->
-        service_connection = new BargeConnection service.binding
+        service_connection = new Connection service.binding
 
     # Save a connection to a service by name
     # TODO: Expire
@@ -65,5 +65,5 @@ class BargeClient
         setTimeout (-> service_connection.close()), 1000
         delete @service_connections[service_name]
 
-module.exports = BargeClient
+module.exports = Client
 

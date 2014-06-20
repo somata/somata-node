@@ -1,12 +1,12 @@
 _ = require 'underscore'
 util = require 'util'
 {log} = require './helpers'
-BargeConnection = require './barge-connection'
+Connection = require './connection'
 
 VERBOSE = true
 HEARTBEAT_MS = 5000
 
-module.exports = class BargeRegistryConnection extends BargeConnection
+module.exports = class RegistryConnection extends Connection
 
     heartbeat_ms: HEARTBEAT_MS
 

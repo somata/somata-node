@@ -2,14 +2,12 @@ util = require 'util'
 zmq = require 'zmq'
 {log, randomString} = require './helpers'
 _ = require 'underscore'
-BargeBinding = require './barge-binding'
-BargeRegistryConnection = require './barge-registry-connection'
+Binding = require './binding'
+RegistryConnection = require './registry-connection'
 
 VERBOSE = false
 
-module.exports = barge = {}
-
-class BargeService
+class Service
 
     methods: {}
 
@@ -21,9 +19,9 @@ class BargeService
         _.extend @methods, @options.methods if @options.methods?
 
         # Bind and register
-        @service_binding = new BargeBinding @options.binding
+        @service_binding = new Binding @options.binding
         @bind()
-        @registry_connection = new BargeRegistryConnection @options.registry
+        @registry_connection = new RegistryConnection @options.registry
         @register()
 
     # Bind the service socket
@@ -79,5 +77,5 @@ class BargeService
             # TODO: Send a failure message to client
             log.i 'No method ' + message.method
 
-module.exports = BargeService
+module.exports = Service
 
