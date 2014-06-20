@@ -1,7 +1,7 @@
-Service = require '../service'
+barge = require 'barge'
 
 # Create a new Barge service named 'math'
-math_service = new Service 'math', methods:
+math_service = new barge.Service 'math', methods:
 
     # Define the math methods
     add: (n1, n2, cb) ->

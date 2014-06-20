@@ -1,7 +1,7 @@
-Service = require '../service'
+barge = require 'barge'
 
 # Create a new Barge service named 'hello'
-hello_service = new Service 'hello', methods:
+hello_service = new barge.Service 'hello', methods:
 
     sayHello: (name, cb) ->
         cb null, 'Hello, ' + name + '!'

@@ -1,8 +1,8 @@
-Service = require('../service')
+barge = require 'barge'
 
 i = 0
 
-new Service 'inc', methods:
+new barge.Service 'inc', methods:
 
     inc: (cb) ->
         cb null, ++i

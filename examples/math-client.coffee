@@ -1,8 +1,8 @@
-Client = require '../client'
+barge = require 'barge'
 {log} = require '../helpers'
 
 # Create a new Barge client with default connection options
-math_client = new Client
+math_client = new barge.Client
 
 # Execute some remote math commands
 math_client.remote 'math', 'add', 5, 10, (err, added) ->

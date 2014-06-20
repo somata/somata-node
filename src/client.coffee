@@ -1,7 +1,8 @@
 util = require 'util'
 {log, randomString, serviceSummary} = require './helpers'
 _ = require 'underscore'
-Barge = require './'
+Connection = require './connection'
+Registry = require './registry'
 
 class Client
 
@@ -9,8 +10,8 @@ class Client
 
     constructor: (@options={}) ->
         @options.registry ||= {}
-        @options.registry = _.defaults @options.registry, Barge.Registry.DEFAULTS
-        @registry_connection = new Barge.Connection @options.registry
+        @options.registry = _.defaults @options.registry, Registry.DEFAULTS
+        @registry_connection = new Connection @options.registry
 
     sendQuery: (service_name, on_response) ->
         @registry_connection.send
@@ -55,7 +56,7 @@ class Client
 
     # Connect to service if it isn't already connected
     connectToService: (service) ->
-        service_connection = new Barge.Connection service.binding
+        service_connection = new Connection service.binding
 
     # Save a connection to a service by name
     # TODO: Expire

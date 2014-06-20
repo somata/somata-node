@@ -1,7 +1,7 @@
-Client = require '../client'
+barge = require 'barge'
 
 # Create a new Barge client
-hello_client = new Client
+hello_client = new barge.Client
 
 # Execute the 'hello' service's `sayHello` method with the argument 'world' ...
 hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->

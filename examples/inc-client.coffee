@@ -1,6 +1,6 @@
-Client = require('../client')
+barge = require 'barge'
 
-client = new Client
+client = new barge.Client
 
 until1000 = (cb) ->
     client.remote 'inc', 'inc', (err, n) ->

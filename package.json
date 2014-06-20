@@ -1,0 +1,34 @@
+{
+    "name": "barge",
+    "version": "0.0.1",
+    "description": "micro-service orchestration framework",
+    "homepage": "http://github.com/prontotype-us/barge",
+    "repository": {
+        "type": "git",
+        "url": "http://github.com/prontotype-us/barge.git"
+    },
+    "author": {
+        "name": "Prontotype",
+        "url": "http://prontotype.us/"
+    },
+    "keywords": [
+        "distributed",
+        "services",
+        "zeromq"
+    ],
+    "main": "lib/index.js",
+    "bin": {
+        "barge-registry": "lib/registry.js"
+    },
+    "scripts": {
+        "build": "./build.sh"
+    },
+    "dependencies": {
+        "ansi": "0.3.x",
+        "minimist": "0.2.x",
+        "moment": "2.x.x",
+        "underscore": "1.x.x",
+        "zmq": "2.x.x"
+    }
+}
+

@@ -3,7 +3,9 @@ util = require 'util'
 zmq = require 'zmq'
 {log, randomString} = require './helpers'
 _ = require 'underscore'
-Barge = require './'
+Binding = require './binding'
+Registry = require './registry'
+RegistryConnection = require './registry-connection'
 
 VERBOSE = false
 
@@ -32,12 +34,12 @@ class Service
         @options.binding.host ||= getHost()
         @options.binding.port ||= randomPort()
 
-        @options.registry ||= Barge.Registry.DEFAULTS
+        @options.registry ||= Registry.DEFAULTS
 
         # Bind and register
-        @service_binding = new Barge.Binding @options.binding
+        @service_binding = new Binding @options.binding
         @bind()
-        @registry_connection = new Barge.RegistryConnection @options.registry
+        @registry_connection = new RegistryConnection @options.registry
         @register()
 
     # Bind the service socket
