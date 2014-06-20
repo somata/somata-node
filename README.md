@@ -24,7 +24,7 @@ hello_service = new barge.Service 'hello', methods:
         cb null, 'Goodbye, cruel ' + name + '!'
 ```
 
-Define a client with `new barge.Client(options):
+Define a client with `new barge.Client(options)`:
 
 ```coffee
 barge = require 'barge'
