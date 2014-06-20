@@ -1,29 +1,11 @@
-BargeService = require '../barge-service'
+Service = require '../service'
 
-# Create a new Barge service ...
-hello_service = new BargeService
+# Create a new Barge service named 'hello'
+hello_service = new Service 'hello', methods:
 
-    # ... named 'hello'...
-    name: 'hello'
+    sayHello: (name, cb) ->
+        cb null, 'Hello, ' + name + '!'
 
-    # ... listening at localhost:5555 ...
-    binding:
-
-        host: 'localhost'
-        port: 5555
-
-    # ... connected to the registry at localhost:8555 ...
-    registry:
-
-        host: 'localhost'
-        port: 8885
-
-    # ... with these methods.
-    methods:
-
-        sayHello: (name, cb) ->
-            cb null, 'Hello, ' + name + '!'
-
-        sayGoodbye: (name, cb) ->
-            cb null, 'Goodbye, cruel ' + name + '!'
+    sayGoodbye: (name, cb) ->
+        cb null, 'Goodbye, cruel ' + name + '!'
 

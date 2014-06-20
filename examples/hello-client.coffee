@@ -1,13 +1,7 @@
-BargeClient = require '../barge-client'
+Client = require '../client'
 
-# Create a new Barge client ...
-hello_client = new BargeClient
-
-    # ... connected to the registry at localhost:8555
-    registry:
-
-        host: 'localhost'
-        port: 8885
+# Create a new Barge client
+hello_client = new Client
 
 # Execute the 'hello' service's `sayHello` method with the argument 'world' ...
 hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->
