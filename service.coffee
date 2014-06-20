@@ -1,3 +1,4 @@
+os = require 'os'
 util = require 'util'
 zmq = require 'zmq'
 {log, randomString} = require './helpers'
@@ -7,6 +8,13 @@ RegistryConnection = require './registry-connection'
 
 VERBOSE = false
 
+randomPort = ->
+    10000 + Math.floor(Math.random()*50000)
+
+REGISTRY_DEFAULTS =
+    host: 'localhost'
+    port: 9910
+
 class Service
 
     methods: {}
@@ -14,9 +22,16 @@ class Service
     # Instatiate a Barge service
     # --------------------------------------------------------------------------
 
-    constructor: (@options={}) ->
+    constructor: (@name, @options={}) ->
         # Copy methods over from options
         _.extend @methods, @options.methods if @options.methods?
+
+        # Determine service host and port
+        @options.binding ||= {}
+        @options.binding.host ||= os.hostname()
+        @options.binding.port ||= randomPort()
+
+        @options.registry ||= REGISTRY_DEFAULTS
 
         # Bind and register
         @service_binding = new Binding @options.binding
@@ -35,7 +50,7 @@ class Service
 
     register: ->
         @registry_connection.register
-            name: @options.name
+            name: @name
             binding: @options.binding
         @registry_connection.handleMessage = @handleRegistryMessage.bind(@)
 
