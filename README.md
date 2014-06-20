@@ -5,54 +5,32 @@ Node.js micro-service &amp; service-registry framework; inspired by Seaport and 
 
 Barge lets you quickly compose networked distributed systems from a collection of services. Services register their network location with the Barge registry, clients query for available services and connect to use their methods from afar.
 
-### Simple example
+# Usage
 
-Define a service:
+Define a service with `new barge.Service(name, options)`:
 
 ```coffee
-BargeService = require '../barge-service'
+barge = require 'barge'
 
-# Create a new Barge service ...
-hello_service = new BargeService
+# Create a new Barge service named 'hello'
+hello_service = new barge.Service 'hello', methods:
 
-    # ... named 'hello'...
-    name: 'hello'
+    # With a few methods
 
-    # ... listening at localhost:5555 ...
-    binding:
+    sayHello: (name, cb) ->
+        cb null, 'Hello, ' + name + '!'
 
-        host: 'localhost'
-        port: 5555
-
-    # ... connected to the registry at localhost:8555 ...
-    registry:
-
-        host: 'localhost'
-        port: 8885
-
-    # ... with these methods.
-    methods:
-
-        sayHello: (name, cb) ->
-            cb null, 'Hello, ' + name + '!'
-
-        sayGoodbye: (name, cb) ->
-            cb null, 'Goodbye, cruel ' + name + '!'
+    sayGoodbye: (name, cb) ->
+        cb null, 'Goodbye, cruel ' + name + '!'
 ```
 
-Define a client:
+Define a client with `new barge.Client(options):
 
 ```coffee
-BargeClient = require '../barge-client'
+barge = require 'barge'
 
-# Create a new Barge client ...
-hello_client = new BargeClient
-
-    # ... connected to the registry at localhost:8555
-    registry:
-
-        host: 'localhost'
-        port: 8885
+# Create a new Barge client
+hello_client = new barge.Client
 
 # Execute the 'hello' service's `sayHello` method with the argument 'world' ...
 hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->
@@ -69,7 +47,7 @@ hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->
 Start the registry and service, then run the client:
 
 ```sh
-$ coffee barge-registry.coffee --port 8885 &
+$ barge-registry --port 8885 &
 Barge registry listening on localhost:8885...
 
 $ coffee hello-service.coffee &
@@ -77,5 +55,19 @@ Barge service listening on localhost:5555...
 
 $ coffee hello-client.coffee
 [hello.sayHello] response: Hello, world!
+```
+
+# Installation
+
+To get the barge library, with [npm](http://npmjs.org) do:
+
+```sh
+$ npm install barge
+```
+
+To get the barge-registry command, do:
+
+```sh
+$ npm install -g barge
 ```
 
