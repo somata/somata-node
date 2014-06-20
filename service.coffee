@@ -7,6 +7,12 @@ Barge = require './'
 
 VERBOSE = false
 
+getHostname = os.hostname
+getHost = ->
+    _.chain(os.networkInterfaces())
+    .flatten().filter((i) -> i.family=='IPv4' and !i.internal)
+    .pluck('address').first().value()
+
 randomPort = ->
     10000 + Math.floor(Math.random()*50000)
 
@@ -23,7 +29,7 @@ class Service
 
         # Determine service host and port
         @options.binding ||= {}
-        @options.binding.host ||= os.hostname()
+        @options.binding.host ||= getHost()
         @options.binding.port ||= randomPort()
 
         @options.registry ||= Barge.Registry.DEFAULTS
