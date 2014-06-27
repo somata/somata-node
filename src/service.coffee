@@ -10,10 +10,17 @@ RegistryConnection = require './registry-connection'
 VERBOSE = false
 
 getHostname = os.hostname
-getHost = ->
+getIP = ->
     _.chain(os.networkInterfaces())
     .flatten().filter((i) -> i.family=='IPv4' and !i.internal)
     .pluck('address').first().value()
+getHost = ->
+    if host = process.env.BARGE_SERVICE_HOST
+        return host
+    else if process.env.BARGE_USE_HOSTNAME
+        return getHostname()
+    else
+        return getIP()
 
 randomPort = ->
     10000 + Math.floor(Math.random()*50000)
@@ -40,7 +47,7 @@ class Service
         @service_binding = new Binding @options.binding
         @bind()
         @registry_connection = new RegistryConnection @options.registry
-        @register()
+        @sendRegister()
 
     # Bind the service socket
     # --------------------------------------------------------------------------
@@ -48,10 +55,10 @@ class Service
     bind: ->
         @service_binding.handleMessage = @handleClientMessage.bind(@)
 
-    # Create a connection to the Barge registry
+    # Send a `register` message to the Barge registry
     # --------------------------------------------------------------------------
 
-    register: ->
+    sendRegister: ->
         @registry_connection.register
             name: @name
             binding: @options.binding
@@ -62,11 +69,11 @@ class Service
     #
     # If the message is the `register?` command, re-register
 
-    handleRegistryMessage: (message) =>
+    handleRegistryMessage: (message) ->
         log "<registry>: #{ util.inspect message, depth: null }" if VERBOSE
 
         if message.command == 'register?'
-            @register()
+            @sendRegister()
 
     # Handle a message from a client
     # --------------------------------------------------------------------------
