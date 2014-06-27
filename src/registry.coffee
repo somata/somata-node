@@ -5,8 +5,8 @@ _ = require 'underscore'
 
 VERBOSE = true
 HEARTBEAT_INTERVAL = 5000
-HEARTBEAT_TIMEOUT = HEARTBEAT_INTERVAL * 5
-REGISTRATION_TIMEOUT = HEARTBEAT_INTERVAL * 5
+HEARTBEAT_TIMEOUT = HEARTBEAT_INTERVAL * 3
+REGISTRATION_TIMEOUT = HEARTBEAT_INTERVAL * 2
 
 exports.DEFAULTS = REGISTRY_DEFAULTS =
     proto: 'tcp'
@@ -29,6 +29,7 @@ class BargeRegistry
         @socket.on 'message', (client_id, message_json) =>
             @handleMessage client_id.toString(), JSON.parse message_json
 
+        @startCheckups()
         log "Barge registry listening on #{ @address }..."
 
     send: (client_id, message) ->
@@ -72,7 +73,13 @@ class BargeRegistry
 
     handleUnregister: (client_id) ->
         if service = @registered_clients[client_id]
-            @registered_services = _.without @registered_services, service
+
+            # Remove this service from the registered list
+            service_instances = @registered_services[service.name]
+            service_instances = _.reject service_instances, (s) ->
+                s.client_id == client_id
+            @registered_services[service.name] = service_instances
+
             delete @registered_clients[client_id]
             log.e "Unregistered service: #{ service.name } <#{ client_id }>"
 
@@ -107,6 +114,20 @@ class BargeRegistry
             @send client_id,
                 id: message.id
                 service: null
+
+    # The checkup cycle
+
+    startCheckups: ->
+        setInterval (=> @checkup()), 500
+
+    checkup: ->
+        now = new Date().getTime()
+        for client_id, client of @registered_clients
+
+            # Check if it should be considered dead
+            if (now - client.last_seen) > HEARTBEAT_TIMEOUT
+
+                @handleUnregister client_id
 
 # Stand-alone mode
 if require.main == module
