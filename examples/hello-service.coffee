@@ -1,4 +1,4 @@
-barge = require 'barge'
+barge = require '../lib'
 
 # Create a new Barge service named 'hello'
 hello_service = new barge.Service 'hello', methods:

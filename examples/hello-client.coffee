@@ -1,4 +1,4 @@
-barge = require 'barge'
+barge = require '../lib'
 
 # Create a new Barge client
 hello_client = new barge.Client

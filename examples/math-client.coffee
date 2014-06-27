@@ -1,5 +1,5 @@
-barge = require 'barge'
-{log} = require '../helpers'
+barge = require '../lib'
+{log} = require '../lib/helpers'
 
 # Create a new Barge client with default connection options
 math_client = new barge.Client
