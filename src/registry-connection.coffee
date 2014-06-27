@@ -1,14 +1,15 @@
 _ = require 'underscore'
 util = require 'util'
+os = require 'os'
 {log} = require './helpers'
 Connection = require './connection'
 
-VERBOSE = true
-HEARTBEAT_MS = 5000
+VERBOSE = false
+HEARTBEAT_INTERVAL = 1000
 
 module.exports = class RegistryConnection extends Connection
 
-    heartbeat_ms: HEARTBEAT_MS
+    heartbeat_interval: HEARTBEAT_INTERVAL
 
     # Register with the Barge registry and start sending heartbeats
     # --------------------------------------------------------------------------
@@ -18,10 +19,6 @@ module.exports = class RegistryConnection extends Connection
     register: (service) ->
         @sendRegister service
         @startHeartbeats()
-
-        process.on 'SIGINT', =>
-            @sendUnregister()
-            process.exit()
 
     # Handle a message from the registry
     # --------------------------------------------------------------------------
@@ -58,11 +55,24 @@ module.exports = class RegistryConnection extends Connection
             args:
                 id: @id
                 name: @name
+                health: 'ok'
+                memory: process.memoryUsage()
+                loads: os.loadavg()
+                uptime: process.uptime()
 
     # Start sending heartbeats at an interval
     # --------------------------------------------------------------------------
 
     startHeartbeats: ->
         clearInterval @heartbeat_interval
-        @heartbeat_interval = setInterval @sendHeartbeat.bind(@), @heartbeat_ms
+        @heartbeat_interval = setInterval @sendHeartbeat.bind(@), @heartbeat_interval
+
+
+RegistryConnection::connect = ->
+    super
+
+    # Unregister when interrupted
+    process.on 'SIGINT', =>
+        @sendUnregister()
+        process.exit()
 
