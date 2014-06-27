@@ -1,7 +1,7 @@
 Barge
 =====
 
-Node.js micro-service &amp; service-registry framework; inspired by Seaport and ZeroRPC
+Node.js micro-service orchestration framework; inspired by Seaport and ZeroRPC
 
 Barge lets you quickly compose networked distributed systems from a collection of services. Services register their network location with the Barge registry, clients query for available services and connect to use their methods from afar.
 
@@ -24,7 +24,7 @@ hello_service = new barge.Service 'hello', methods:
         cb null, 'Goodbye, cruel ' + name + '!'
 ```
 
-Define a client with `new barge.Client(options):
+Define a client with `new barge.Client(options)`:
 
 ```coffee
 barge = require 'barge'
@@ -47,13 +47,14 @@ hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->
 Start the registry and service, then run the client:
 
 ```sh
-$ barge-registry --port 8885 &
-Barge registry listening on localhost:8885...
+$ barge-registry &
+Barge registry listening on localhost:9010...
 
 $ coffee hello-service.coffee &
-Barge service listening on localhost:5555...
+Barge service listening on localhost:15555...
 
 $ coffee hello-client.coffee
+Found service hello@localhost:15555
 [hello.sayHello] response: Hello, world!
 ```
 
@@ -65,7 +66,7 @@ To get the barge library, with [npm](http://npmjs.org) do:
 $ npm install barge
 ```
 
-To get the barge-registry command, do:
+To get the `barge-registry` command, do:
 
 ```sh
 $ npm install -g barge
