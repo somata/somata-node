@@ -3,10 +3,10 @@ zmq = require 'zmq'
 {log, randomString, randomChoice} = require './helpers'
 _ = require 'underscore'
 
-VERBOSE = true
-HEARTBEAT_INTERVAL = 5000
+VERBOSE = false
+HEARTBEAT_INTERVAL = 1000
 HEARTBEAT_TIMEOUT = HEARTBEAT_INTERVAL * 3
-REGISTRATION_TIMEOUT = HEARTBEAT_INTERVAL * 2
+REGISTRATION_TIMEOUT = HEARTBEAT_INTERVAL * 3
 
 exports.DEFAULTS = REGISTRY_DEFAULTS =
     proto: 'tcp'
