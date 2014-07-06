@@ -1,7 +1,7 @@
 {
     "name": "barge",
-    "version": "0.0.4",
-    "description": "micro-service orchestration framework",
+    "version": "0.0.6",
+    "description": "Micro-service orchestration framework built on Consul and ZeroRPC",
     "homepage": "http://github.com/prontotype-us/barge",
     "repository": {
         "type": "git",
@@ -12,9 +12,11 @@
         "url": "http://prontotype.us/"
     },
     "keywords": [
+        "consul",
         "distributed",
         "services",
-        "zeromq"
+        "zeromq",
+        "zerorpc"
     ],
     "main": "lib/index.js",
     "bin": {
@@ -28,7 +30,7 @@
         "minimist": "0.2.x",
         "moment": "2.x.x",
         "underscore": "1.x.x",
-        "zmq": "2.x.x"
+        "zerorpc": "0.9.3"
     }
 }
 
