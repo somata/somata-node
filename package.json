@@ -15,8 +15,7 @@
         "consul",
         "distributed",
         "services",
-        "zeromq",
-        "zerorpc"
+        "zeromq"
     ],
     "main": "lib/index.js",
     "bin": {
@@ -30,7 +29,7 @@
         "minimist": "0.2.x",
         "moment": "2.x.x",
         "underscore": "1.x.x",
-        "zerorpc": "0.9.3"
+        "zmq": "2.x.x"
     }
 }
 

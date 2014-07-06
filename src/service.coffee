@@ -1,6 +1,5 @@
 os = require 'os'
 util = require 'util'
-zerorpc = require 'zerorpc'
 helpers = require './helpers'
 _ = require 'underscore'
 ConsulAgent = require './consul-agent'
