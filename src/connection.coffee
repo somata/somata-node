@@ -1,13 +1,14 @@
 zmq = require 'zmq'
 util = require 'util'
 _ = require 'underscore'
+{EventEmitter} = require 'events'
 {log, randomString} = require './helpers'
 
 VERBOSE = false
 DEFAULT_PROTO = 'tcp'
 DEFAULT_CONNECT = 'localhost'
 
-module.exports = class Connection
+module.exports = class Connection extends EventEmitter
 
     # Store pending response callbacks
     # --------------------------------------------------------------------------
@@ -60,7 +61,7 @@ module.exports = class Connection
     handleMessage: (message) ->
         log ">: #{ util.inspect message }" if VERBOSE
         if on_response = @pending_responses[message.id]
-            on_response(null, message)
+            on_response(null, message.response)
 
     # Send a message to the connected-to service
     # --------------------------------------------------------------------------
@@ -76,6 +77,20 @@ module.exports = class Connection
             @pending_responses[message.id] = on_response
         return message
 
+    invoke: (method, args..., cb) ->
+        method_msg =
+            kind: 'method'
+            method: method
+            args: args
+        @send method_msg, cb
+
     close: ->
         @socket.close()
+
+# Class methods
+
+Connection.fromConsulNode = (node) ->
+    return new Connection
+        host: node.Address
+        port: node.ServicePort
 

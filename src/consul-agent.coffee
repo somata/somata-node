@@ -2,10 +2,10 @@ request = require 'request'
 util = require 'util'
 {log} = require './helpers'
 
+VERBOSE = false
 DEFAULT_BASE_URL = 'http://localhost:8500/v1'
 
 ConsulAgent = (@options={}) ->
-    log.s '[ConsulAgent] initialized with options: ' + util.inspect @options
     @setDefaults()
     return @
 
@@ -25,9 +25,8 @@ ConsulAgent::apiRequest = (method, path, data, cb) ->
         json: true
         body: data
 
-    log.d util.inspect request_options
     request request_options, (err, res, data) ->
-        log.d '[apiRequest] Response status: ' + res.statusCode
+        log.d '[apiRequest] Response status: ' + res.statusCode if VERBOSE
         cb(err, data) if cb?
 
 # Core API requests

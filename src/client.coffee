@@ -1,9 +1,11 @@
 util = require 'util'
 helpers = require './helpers'
-zerorpc = require 'zerorpc'
 _ = require 'underscore'
 ConsulAgent = require './consul-agent'
+Connection = require './connection'
 log = helpers.log
+
+VERBOSE = false
 
 Client = (@options={}) ->
     @consul_agent = new ConsulAgent
@@ -49,9 +51,8 @@ Client::getServiceNodes = (service_name, cb) ->
 # Connect to a service at a found node's address & port
 
 Client::connectToServiceNode = (node) ->
-    log.s "[connectToServiceNode] Connecting to #{ util.inspect node }"
-    connection = new zerorpc.Client
-    connection.connect helpers.makeNodeAddress node
+    log.s "[connectToServiceNode] Connecting to #{ util.inspect node }" if VERBOSE
+    connection = Connection.fromConsulNode node
     return connection
 
 # Save a connection to a service by name
