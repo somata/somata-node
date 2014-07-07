@@ -1,4 +1,4 @@
-pipeline = require '../../qnectar/pipeline/pipeline'
+pipeline = require 'pipeline'
 barge = require 'barge'
 
 client = new barge.Client
