@@ -50,7 +50,7 @@ module.exports = class Connection extends EventEmitter
         @socket.on 'message', (message_json) =>
             @handleMessage JSON.parse message_json
 
-        log "Socket #{ @id } connected to #{ @address }..."
+        log "Socket #{ @id } connected to #{ @address }..." if VERBOSE
 
     # Handle a message from the connected-to service
     # --------------------------------------------------------------------------
