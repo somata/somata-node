@@ -26,5 +26,15 @@ BargePipeline::get = (t, k) ->
 # Set up a readline prompt
 PipelineREPL = require '../../qnectar/pipeline/repl'
 
-repl = new PipelineREPL(new BargePipeline())
+pipe = new BargePipeline()
+pipe.use
+    'members': (inp, args, ctx, cb) ->
+        client.consul_agent.getNodes cb
+    'services': (inp, args, ctx, cb) ->
+        client.consul_agent.getServices cb
+    'service-nodes': (inp, args, ctx, cb) ->
+        client.consul_agent.getServiceNodes args[0], cb
+
+repl = new PipelineREPL(pipe)
 repl.startReadline()
+
