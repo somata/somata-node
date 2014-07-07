@@ -19,7 +19,7 @@
     ],
     "main": "lib/index.js",
     "bin": {
-        "barge-registry": "lib/registry.js"
+        "barge-repl": "lib/repl.js"
     },
     "scripts": {
         "build": "./build.sh"
