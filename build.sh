@@ -4,8 +4,8 @@
 coffee -o lib -c src
 
 # Ugly hack to prepend shebang line
-cp lib/registry.js lib/registry.js.tmp
-echo "#!/usr/bin/env node" > lib/registry.js.tmp
-cat lib/registry.js >> lib/registry.js.tmp
-mv lib/registry.js.tmp lib/registry.js
+cp lib/repl.js lib/repl.js.tmp
+echo "#!/usr/bin/env node" > lib/repl.js.tmp
+cat lib/repl.js >> lib/repl.js.tmp
+mv lib/repl.js.tmp lib/repl.js
 
