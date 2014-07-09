@@ -1,5 +1,5 @@
 pipeline = require 'pipeline'
-barge = require 'barge'
+barge = require './'
 
 client = new barge.Client
 class BargePipeline extends pipeline.Pipeline
