@@ -6,7 +6,7 @@ ConsulAgent = require './consul-agent'
 Binding = require './binding'
 log = helpers.log
 
-VERBOSE = false
+VERBOSE = true
 
 class Service
 
@@ -40,7 +40,8 @@ class Service
         log "<#{ client_id }>: #{ util.inspect message, depth: null }" if VERBOSE
 
         # Find the method
-        if _method = @methods[message.method]
+        if _method = @getMethod message.method
+            console.log "Got method " + _method
 
             # Execute the method with the arguments
             log 'Executing ' + message.method if VERBOSE
@@ -56,6 +57,18 @@ class Service
         else
             # TODO: Send a failure message to client
             log.i 'No method ' + message.method
+
+    getMethod: (method_name) ->
+        descend = (o, c) ->
+            console.log "Descending into `#{ util.inspect o }` with #{ util.inspect c }"
+            if c.length == 1
+                return o[c[0]].bind(o)
+            else
+                return descend o[c.shift()], c
+        if (method_context = method_name.split('.')).length > 1
+            return descend @methods, method_context
+        else
+            return @methods[method_name]
 
     # Send a `register` message to the Barge registry
     # --------------------------------------------------------------------------
