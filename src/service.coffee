@@ -6,7 +6,7 @@ ConsulAgent = require './consul-agent'
 Binding = require './binding'
 log = helpers.log
 
-VERBOSE = true
+VERBOSE = false
 
 class Service
 
@@ -40,18 +40,42 @@ class Service
         log "<#{ client_id }>: #{ util.inspect message, depth: null }" if VERBOSE
 
         # Find the method
-        if _method = @getMethod message.method
-            console.log "Got method " + _method
+        method_name = message.method
+        if _method = @getMethod method_name
 
-            # Execute the method with the arguments
-            log 'Executing ' + message.method if VERBOSE
-            _method message.args..., (err, response) =>
+            # Define our response methods
 
-                # Respond to the client
+            _sendResponse = (response) =>
                 @service_binding.send client_id,
                     id: message.id
-                    type: 'response'
+                    kind: 'response'
                     response: response
+
+            _sendError = (error) =>
+                @service_binding.send client_id,
+                    id: message.id
+                    kind: 'error'
+                    error: error
+
+            # Execute the method with the arguments
+            log 'Executing ' + method_name if VERBOSE
+            try
+
+                _method message.args..., (err, response) =>
+                    if err
+                        _sendError err
+                    else
+                        _sendResponse response
+
+            catch e
+                # Catch unhandled errors
+                err = e.toString()
+                arity_mismatch = (message.args.length != _method.length - 1)
+                if arity_mismatch &&
+                    e instanceof TypeError &&
+                    err.slice(11) == 'undefined is not a function'
+                        err = "ArityError? method `#{ method_name }` takes #{ _method.length-1 } arguments."
+                _sendError err
 
         # Method not found for this service
         else
@@ -60,7 +84,6 @@ class Service
 
     getMethod: (method_name) ->
         descend = (o, c) ->
-            console.log "Descending into `#{ util.inspect o }` with #{ util.inspect c }"
             if c.length == 1
                 return o[c[0]].bind(o)
             else

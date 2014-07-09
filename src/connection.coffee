@@ -61,7 +61,10 @@ module.exports = class Connection extends EventEmitter
     handleMessage: (message) ->
         log ">: #{ util.inspect message }" if VERBOSE
         if on_response = @pending_responses[message.id]
-            on_response(null, message.response)
+            if message.kind == 'response'
+                on_response(null, message.response)
+            else if message.kind == 'error'
+                on_response(message.error, null)
 
     # Send a message to the connected-to service
     # --------------------------------------------------------------------------
