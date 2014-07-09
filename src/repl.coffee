@@ -12,8 +12,8 @@ BargePipeline::get = (t, k) ->
 
     if !found? and t == 'fns'
 
-        # Check if the key matches [service].[method]
-        if service_method = k.match /(\w+)\.(\w+)/
+        # Check if the key matches [service]:[method]
+        if service_method = k.match /(\w+):([\w\.]+)/
             service = service_method[1]
             method = service_method[2]
 
@@ -27,13 +27,17 @@ BargePipeline::get = (t, k) ->
 PipelineREPL = require '../../qnectar/pipeline/repl'
 
 pipe = new BargePipeline()
-pipe.use
-    'members': (inp, args, ctx, cb) ->
-        client.consul_agent.getNodes cb
-    'services': (inp, args, ctx, cb) ->
-        client.consul_agent.getServices cb
-    'service-nodes': (inp, args, ctx, cb) ->
-        client.consul_agent.getServiceNodes args[0], cb
+    .use('http')
+    .use('encodings')
+    .use(
+        'members': (inp, args, ctx, cb) ->
+            client.consul_agent.getNodes cb
+        'services': (inp, args, ctx, cb) ->
+            client.consul_agent.getServices cb
+        'service-nodes': (inp, args, ctx, cb) ->
+            client.consul_agent.getServiceNodes args[0], cb
+    )
+    .set('vars', 'consul_base', client.consul_agent.options.base_url)
 
 repl = new PipelineREPL(pipe)
 repl.startReadline()
