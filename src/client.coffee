@@ -6,6 +6,8 @@ Connection = require './connection'
 log = helpers.log
 
 VERBOSE = false
+CONNECTION_TIMEOUT = 6500
+CONNECTION_LINGER = 1500
 
 Client = (@options={}) ->
     @consul_agent = new ConsulAgent
@@ -59,12 +61,12 @@ Client::connectToServiceNode = (node) ->
 
 Client::saveServiceConnection = (service_name, service_connection) ->
     @service_connections[service_name] = service_connection
-    setTimeout @killConnection.bind(@, service_name, service_connection), 3500
+    setTimeout @killConnection.bind(@, service_name, service_connection), CONNECTION_TIMEOUT
 
 # Kill an existing connection
 
 Client::killConnection = (service_name, service_connection) ->
-    setTimeout (-> service_connection.close()), 1000
+    setTimeout (-> service_connection.close()), CONNECTION_LINGER
     delete @service_connections[service_name]
 
 module.exports = Client
