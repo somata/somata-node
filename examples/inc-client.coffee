@@ -1,6 +1,6 @@
-# barge = require '../src'
+barge = require '../src'
 # barge = require '../lib'
-barge = require 'barge'
+# barge = require 'barge'
 log = barge.helpers.log
 
 client = new barge.Client
@@ -8,7 +8,6 @@ client = new barge.Client
 until1000 = (cb) ->
     client.remote 'inc', 'inc', (err, n) ->
         if n >= 1000
-            log.s "Done."
             cb()
         else
             until1000 cb
@@ -16,7 +15,6 @@ until1000 = (cb) ->
 until0 = (cb) ->
     client.remote 'inc', 'dec', (err, n) ->
         if n <= 0
-            log.s "Done."
             cb()
         else
             until0 cb

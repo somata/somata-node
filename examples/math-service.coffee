@@ -1,6 +1,6 @@
-# barge = require '../src'
+barge = require '../src'
 # barge = require '../lib'
-barge = require 'barge'
+# barge = require 'barge'
 
 # Create a new Barge service named 'math'
 math_service = new barge.Service 'math',
