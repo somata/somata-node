@@ -1,6 +1,8 @@
+async = require 'async'
 request = require 'request'
 util = require 'util'
 {log} = require './helpers'
+_ = require 'underscore'
 
 VERBOSE = false
 DEFAULT_BASE_URL = 'http://localhost:8500/v1'
@@ -45,6 +47,19 @@ ConsulAgent::registerService = (service, cb) ->
 
 ConsulAgent::deregisterService = (service_id, cb) ->
     @apiRequest 'DELETE', '/agent/service/deregister/' + service_id, cb
+
+# Higher level requests
+
+ConsulAgent::getAllServiceNodes = (cb) ->
+    all_service_nodes = {}
+    self = @
+
+    self.getServices (err, services) ->
+        async.map _.keys(services), (service_id, _cb) ->
+            self.getServiceNodes service_id, (err, service_nodes) ->
+                all_service_nodes[service_id] = service_nodes
+                _cb()
+        , -> cb null, all_service_nodes
 
 module.exports = ConsulAgent
 
