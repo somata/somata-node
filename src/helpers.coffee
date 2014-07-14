@@ -45,8 +45,8 @@ exports.serviceSummary = (service) ->
     return service.name + '@' + service.binding.host + ':' + service.binding.port
 
 # Create a tcp://host:port address from a Consul Node description
-exports.makeNodeAddress = (node) ->
-    return 'tcp://' + node.Address + ':' + node.ServicePort
+exports.makeAddress = (host, port) ->
+    return 'tcp://' + host + ':' + port
 
 exports.randomPort = ->
     10000 + Math.floor(Math.random()*50000)

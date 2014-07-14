@@ -74,7 +74,7 @@ module.exports = class Connection extends EventEmitter
     # with the same ID when it has a response.
 
     send: (message, on_response) ->
-        message.id = randomString 16
+        message.id ||= randomString 16
         @socket.send JSON.stringify message
         if on_response?
             @pending_responses[message.id] = on_response
@@ -92,8 +92,8 @@ module.exports = class Connection extends EventEmitter
 
 # Class methods
 
-Connection.fromConsulNode = (node) ->
+Connection.fromConsulService = (instance) ->
     return new Connection
-        host: node.Address
-        port: node.ServicePort
+        host: instance.Node.Address
+        port: instance.Service.Port
 

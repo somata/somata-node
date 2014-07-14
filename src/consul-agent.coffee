@@ -32,6 +32,9 @@ ConsulAgent::apiRequest = (method, path, data, cb) ->
         cb(err, data) if cb?
 
 # Core API requests
+# ------------------------------------------------------------------------------
+
+# Catalog
 
 ConsulAgent::getNodes = (cb) ->
     @apiRequest 'GET', '/catalog/nodes', cb
@@ -42,11 +45,30 @@ ConsulAgent::getServices = (cb) ->
 ConsulAgent::getServiceNodes = (service_id, cb) ->
     @apiRequest 'GET', '/catalog/service/' + service_id, cb
 
+ConsulAgent::deregisterExternalService = (service, cb) ->
+    @apiRequest 'PUT', '/catalog/deregister/' + service_id, service, cb
+
+# Health
+
+ConsulAgent::getServiceHealth = (service_id, cb) ->
+    @apiRequest 'GET', '/health/service/' + service_id, cb
+
+# Agent
+
 ConsulAgent::registerService = (service, cb) ->
     @apiRequest 'PUT', '/agent/service/register', service, cb
 
 ConsulAgent::deregisterService = (service_id, cb) ->
     @apiRequest 'DELETE', '/agent/service/deregister/' + service_id, cb
+
+ConsulAgent::registerCheck = (check, cb) ->
+    @apiRequest 'PUT', '/agent/check/register', check, cb
+
+ConsulAgent::deregisterCheck = (check_id, cb) ->
+    @apiRequest 'DELETE', '/agent/check/deregister/' + check_id, cb
+
+ConsulAgent::checkPass = (check_id, cb) ->
+    @apiRequest 'GET', '/agent/check/pass/' + check_id, cb
 
 # Higher level requests
 
@@ -56,7 +78,7 @@ ConsulAgent::getAllServiceNodes = (cb) ->
 
     self.getServices (err, services) ->
         async.map _.keys(services), (service_id, _cb) ->
-            self.getServiceNodes service_id, (err, service_nodes) ->
+            self.getServiceHealth service_id, (err, service_nodes) ->
                 all_service_nodes[service_id] = service_nodes
                 _cb()
         , -> cb null, all_service_nodes

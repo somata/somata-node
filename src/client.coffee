@@ -21,7 +21,10 @@ Client::service_connections = {}
 
 Client::remote = (service_name, method, args..., cb) ->
     @getServiceConnection service_name, (err, service_connection) ->
-        service_connection.invoke method, args..., cb
+        if err
+            log.e err
+        else
+            service_connection.invoke method, args..., cb
 
 # Queries for and connects to a service
 
@@ -33,28 +36,38 @@ Client::getServiceConnection = (service_name, cb) ->
 
     else
         # Otherwise ask the consul agent
-        @getServiceNodes service_name, (err, nodes) =>
-            if !nodes? or !nodes.length
-                log "Could not find service", color: 'yellow'
+        @getServiceHealth service_name, (err, instances) =>
 
-            else
-                node = helpers.randomChoice nodes
-                service_connection = @connectToServiceNode node
+            # Filter by those with passing checks
+            console.log "[getServiceConnection] found #{ instances.length } instances"
+            healthy_instances = instances.filter((i) ->
+                i.Checks.filter((c) ->
+                    c.Status == 'critical'
+                ).length == 0
+            )
+            console.log "[getServiceConnection] found #{ healthy_instances.length } healthy instances"
 
-                # Save for further use
-                @saveServiceConnection service_name, service_connection
-                cb null, service_connection
+            if !healthy_instances.length
+                return cb "Could not find service", null
+
+            # Choose one of the available instances and connect
+            instance = helpers.randomChoice healthy_instances
+            service_connection = @connectToService instance
+
+            # Save for later use
+            @saveServiceConnection service_name, service_connection
+            cb null, service_connection
 
 # Ask the Consul agent for a service's available nodes
 
-Client::getServiceNodes = (service_name, cb) ->
-    @consul_agent.getServiceNodes service_name, cb
+Client::getServiceHealth = (service_name, cb) ->
+    @consul_agent.getServiceHealth service_name, cb
 
 # Connect to a service at a found node's address & port
 
-Client::connectToServiceNode = (node) ->
-    log.s "[connectToServiceNode] Connecting to #{ util.inspect node }" if VERBOSE
-    connection = Connection.fromConsulNode node
+Client::connectToService = (instance) ->
+    log.s "[connectToService] Connecting to #{ util.inspect instance }" if VERBOSE
+    connection = Connection.fromConsulService instance
     return connection
 
 # Save a connection to a service by name
