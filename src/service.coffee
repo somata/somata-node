@@ -147,9 +147,7 @@ class Service
 
     startChecks: ->
         setInterval (=>
-            log.i 'checking'
-            @consul_agent.checkPass 'service:' + @id, () ->
-                log.s 'checked'
+            @consul_agent.checkPass 'service:' + @id
         ), 9000
 
     deregister: (cb) ->
