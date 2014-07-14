@@ -39,13 +39,11 @@ Client::getServiceConnection = (service_name, cb) ->
         @getServiceHealth service_name, (err, instances) =>
 
             # Filter by those with passing checks
-            console.log "[getServiceConnection] found #{ instances.length } instances"
             healthy_instances = instances.filter((i) ->
                 i.Checks.filter((c) ->
                     c.Status == 'critical'
                 ).length == 0
             )
-            console.log "[getServiceConnection] found #{ healthy_instances.length } healthy instances"
 
             if !healthy_instances.length
                 return cb "Could not find service", null
