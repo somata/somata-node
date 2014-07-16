@@ -63,8 +63,12 @@ module.exports = class Connection extends EventEmitter
         if on_response = @pending_responses[message.id]
             if message.kind == 'response'
                 on_response(null, message.response)
+                delete @pending_responses[message.id]
             else if message.kind == 'error'
                 on_response(message.error, null)
+                delete @pending_responses[message.id]
+            else if message.kind == 'event'
+                on_response(null, message.event)
 
     # Send a message to the connected-to service
     # --------------------------------------------------------------------------
@@ -80,12 +84,18 @@ module.exports = class Connection extends EventEmitter
             @pending_responses[message.id] = on_response
         return message
 
-    invoke: (method, args..., cb) ->
+    sendMethod: (method, args..., cb) ->
         method_msg =
             kind: 'method'
             method: method
             args: args
         @send method_msg, cb
+
+    sendSubscribe: (type, cb) ->
+        subscribe_msg =
+            kind: 'subscribe'
+            type: type
+        @send subscribe_msg, cb
 
     close: ->
         @socket.close()

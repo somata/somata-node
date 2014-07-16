@@ -2,6 +2,7 @@ os = require 'os'
 util = require 'util'
 helpers = require './helpers'
 _ = require 'underscore'
+{EventEmitter} = require 'events'
 ConsulAgent = require './consul-agent'
 Binding = require './binding'
 log = helpers.log
@@ -15,7 +16,7 @@ descend = (o, c) ->
     else
         return descend o[c.shift()], c
 
-class Service
+class Service extends EventEmitter
 
     # Instatiate a Barge service
     # --------------------------------------------------------------------------
@@ -34,6 +35,7 @@ class Service
 
         # Bind event handlers
         @service_binding.on 'method', @handleMethod.bind(@)
+        @service_binding.on 'subscribe', @handleSubscribe.bind(@)
         #@service_binding.on 'status', @handleStatus.bind(@)
 
         # Register the service
@@ -111,7 +113,23 @@ class Service
     #
     # TODO
 
-    handleSubscription: ->
+    subscriptions: {}
+
+    handleSubscribe: (client_id, message) ->
+        type = message.type
+        subscription_id = message.id
+        subscription_key = [client_id, subscription_id].join(':')
+        @subscriptions[type] ||= []
+        @subscriptions[type].push subscription_key
+
+    publish: (type, event) ->
+        if subscriptions = @subscriptions[type]
+            subscriptions.forEach (subscription_key) =>
+                [client_id, subscription_id] = subscription_key.split(':')
+                @service_binding.send client_id,
+                    id: subscription_id
+                    kind: 'event'
+                    event: event
 
     # Handle a status request
     # --------------------------------------------------------------------------

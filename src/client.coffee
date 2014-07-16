@@ -6,6 +6,7 @@ Connection = require './connection'
 log = helpers.log
 
 VERBOSE = false
+KEEPALIVE = true
 CONNECTION_TIMEOUT = 6500
 CONNECTION_LINGER = 1500
 
@@ -24,7 +25,14 @@ Client::remote = (service_name, method, args..., cb) ->
         if err
             log.e err
         else
-            service_connection.invoke method, args..., cb
+            service_connection.sendMethod method, args..., cb
+
+Client::on = (service_name, type, cb) ->
+    @getServiceConnection service_name, (err, service_connection) ->
+        if err
+            log.e err
+        else
+            service_connection.sendSubscribe type, cb
 
 # Queries for and connects to a service
 
@@ -72,7 +80,8 @@ Client::connectToService = (instance) ->
 
 Client::saveServiceConnection = (service_name, service_connection) ->
     @service_connections[service_name] = service_connection
-    setTimeout @killConnection.bind(@, service_name, service_connection), CONNECTION_TIMEOUT
+    if !KEEPALIVE
+        setTimeout @killConnection.bind(@, service_name, service_connection), CONNECTION_TIMEOUT
 
 # Kill an existing connection
 
