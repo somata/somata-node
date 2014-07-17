@@ -72,7 +72,7 @@ ConsulAgent::checkPass = (check_id, cb) ->
 
 # Higher level requests
 
-ConsulAgent::getAllServiceNodes = (cb) ->
+ConsulAgent::getAllServicesHealth = (cb) ->
     all_service_nodes = {}
     self = @
 
