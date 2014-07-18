@@ -16,9 +16,9 @@ descend = (o, c) ->
     else
         return descend o[c.shift()], c
 
-class Service extends EventEmitter
+module.exports = class SomataService extends EventEmitter
 
-    # Instatiate a Barge service
+    # Instatiate a Somata service
     # --------------------------------------------------------------------------
 
     constructor: (@name, @methods={}, options={}) ->
@@ -172,6 +172,4 @@ class Service extends EventEmitter
         @consul_agent.deregisterService @id, (err, deregistered) =>
             log.e "Deregistered `#{ @name }` from :#{ @binding.port }"
             cb(null, deregistered) if cb?
-
-module.exports = Service
 

@@ -1,11 +1,11 @@
 pipeline = require 'pipeline'
-barge = require './'
+somata = require './'
 
-client = new barge.Client
-class BargePipeline extends pipeline.Pipeline
+client = new somata.Client
+class SomataPipeline extends pipeline.Pipeline
 
 # Overwrite pipeline.get to look up service methods
-BargePipeline::get = (t, k) ->
+SomataPipeline::get = (t, k) ->
 
     # Try to resolve it normally first
     found = super
@@ -26,7 +26,7 @@ BargePipeline::get = (t, k) ->
 # Set up a readline prompt
 PipelineREPL = require '../../qnectar/pipeline/repl'
 
-pipe = new BargePipeline()
+pipe = new SomataPipeline()
     .use('http')
     .use('encodings')
     .use(

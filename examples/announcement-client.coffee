@@ -1,11 +1,11 @@
-barge = require '../src'
-# barge = require '../lib'
-# barge = require 'barge'
-log = barge.helpers.log
+somata = require '../src'
+# somata = require '../lib'
+# somata = require 'somata'
+log = somata.helpers.log
 util = require 'util'
 
-# Create a new Barge client
-announcement_client = new barge.Client
+# Create a new Somata client
+announcement_client = new somata.Client
 
 # Execute the 'announcement' service's `sayannouncement` method with the argument 'world' ...
 announcement_client.on 'announcement', 'announcement', (err, message) ->

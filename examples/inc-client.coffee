@@ -1,9 +1,9 @@
-barge = require '../src'
-# barge = require '../lib'
-# barge = require 'barge'
-log = barge.helpers.log
+somata = require '../src'
+# somata = require '../lib'
+# somata = require 'somata'
+log = somata.helpers.log
 
-client = new barge.Client
+client = new somata.Client
 
 until1000 = (cb) ->
     client.remote 'inc', 'inc', (err, n) ->

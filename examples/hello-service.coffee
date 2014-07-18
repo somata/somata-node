@@ -1,9 +1,9 @@
-# barge = require '../src'
-# barge = require '../lib'
-barge = require 'barge'
+# somata = require '../src'
+# somata = require '../lib'
+somata = require 'somata'
 
-# Create a new Barge service named 'hello'
-hello_service = new barge.Service 'hello',
+# Create a new Somata service named 'hello'
+hello_service = new somata.Service 'hello',
 
     sayHello: (name, cb) ->
         cb null, 'Hello, ' + name + '!'

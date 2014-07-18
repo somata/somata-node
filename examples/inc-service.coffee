@@ -1,10 +1,10 @@
-barge = require '../src'
-# barge = require '../lib'
-# barge = require 'barge'
+somata = require '../src'
+# somata = require '../lib'
+# somata = require 'somata'
 
 i = 0
 
-new barge.Service 'inc',
+new somata.Service 'inc',
 
     inc: (cb) ->
         cb null, ++i

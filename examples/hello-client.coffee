@@ -1,10 +1,10 @@
-# barge = require '../src'
-# barge = require '../lib'
-barge = require 'barge'
-log = barge.helpers.log
+# somata = require '../src'
+# somata = require '../lib'
+somata = require 'somata'
+log = somata.helpers.log
 
-# Create a new Barge client
-hello_client = new barge.Client
+# Create a new Somata client
+hello_client = new somata.Client
 
 # Execute the 'hello' service's `sayHello` method with the argument 'world' ...
 hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->

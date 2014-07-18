@@ -1,19 +1,19 @@
-Barge
+Somata
 =====
 
 Node.js micro-service orchestration framework; inspired by Seaport and ZeroRPC
 
-Barge lets you quickly compose networked distributed systems from a collection of services. Services register their network location with the Barge registry, clients query for available services and connect to use their methods from afar.
+Somata lets you quickly compose networked distributed systems from a collection of services. Services register their network location with the Somata registry, clients query for available services and connect to use their methods from afar.
 
 # Usage
 
-Define a service with `new barge.Service(name, options)`:
+Define a service with `new somata.Service(name, options)`:
 
 ```coffee
-barge = require 'barge'
+somata = require 'somata'
 
-# Create a new Barge service named 'hello'
-hello_service = new barge.Service 'hello', methods:
+# Create a new Somata service named 'hello'
+hello_service = new somata.Service 'hello', methods:
 
     # With a few methods
 
@@ -24,13 +24,13 @@ hello_service = new barge.Service 'hello', methods:
         cb null, 'Goodbye, cruel ' + name + '!'
 ```
 
-Define a client with `new barge.Client(options)`:
+Define a client with `new somata.Client(options)`:
 
 ```coffee
-barge = require 'barge'
+somata = require 'somata'
 
-# Create a new Barge client
-hello_client = new barge.Client
+# Create a new Somata client
+hello_client = new somata.Client
 
 # Execute the 'hello' service's `sayHello` method with the argument 'world' ...
 hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->
@@ -47,11 +47,11 @@ hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->
 Start the registry and service, then run the client:
 
 ```sh
-$ barge-registry &
-Barge registry listening on localhost:9010...
+$ somata-registry &
+Somata registry listening on localhost:9010...
 
 $ coffee hello-service.coffee &
-Barge service listening on localhost:15555...
+Somata service listening on localhost:15555...
 
 $ coffee hello-client.coffee
 Found service hello@localhost:15555
@@ -60,15 +60,15 @@ Found service hello@localhost:15555
 
 # Installation
 
-To get the barge library, with [npm](http://npmjs.org) do:
+To get the somata library, with [npm](http://npmjs.org) do:
 
 ```sh
-$ npm install barge
+$ npm install somata
 ```
 
-To get the `barge-registry` command, do:
+To get the `somata-registry` command, do:
 
 ```sh
-$ npm install -g barge
+$ npm install -g somata
 ```
 

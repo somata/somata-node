@@ -19,7 +19,7 @@ module.exports = class Connection extends EventEmitter
 
     pending_responses: {}
 
-    # Create a new Barge connection
+    # Create a new Somata connection
     # --------------------------------------------------------------------------
     #
     # Accepts an optional `id`, or generates one if none is supplied.

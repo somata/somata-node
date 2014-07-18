@@ -8,7 +8,7 @@ DEFAULT_PROTO = 'tcp'
 DEFAULT_BIND = '0.0.0.0'
 DEFAULT_PORT = 5555
 
-module.exports = class BargeBinding extends EventEmitter
+module.exports = class SomataBinding extends EventEmitter
 
     constructor: (options={}) ->
         @id = @id || randomString()

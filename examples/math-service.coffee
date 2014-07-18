@@ -1,9 +1,9 @@
-barge = require '../src'
-# barge = require '../lib'
-# barge = require 'barge'
+somata = require '../src'
+# somata = require '../lib'
+# somata = require 'somata'
 
-# Create a new Barge service named 'math'
-math_service = new barge.Service 'math',
+# Create a new Somata service named 'math'
+math_service = new somata.Service 'math',
 
     # Define the math methods
 
