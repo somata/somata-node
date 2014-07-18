@@ -3,7 +3,5 @@ module.exports =
     Service: require './service'
     Connection: require './connection'
     Binding: require './binding'
-    Registry: require './registry'
-    RegistryConnection: require './registry-connection'
     helpers: require './helpers'
 
