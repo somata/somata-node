@@ -20,6 +20,7 @@ exports.log = log = (s, options={}) ->
 log.i = (s) -> log s, color: 'yellow'
 log.e = (s) -> log s, color: 'red'
 log.d = (s) -> log s, color: 'grey'
+log.s = (s) -> log s, color: 'green'
 
 # Avoid wasting time on static resources
 static_exts = ['css','js','jpg','png','gif','woff', 'svg']
@@ -43,3 +44,12 @@ exports.randomChoice = (l) ->
 exports.serviceSummary = (service) ->
     return service.name + '@' + service.binding.host + ':' + service.binding.port
 
+# Create a tcp://host:port address from a Consul Node description
+exports.makeAddress = (host, port) ->
+    return 'tcp://' + host + ':' + port
+
+exports.randomPort = ->
+    10000 + Math.floor(Math.random()*50000)
+
+exports.makeBindingAddress = (protocol, port) ->
+    return protocol + '://0.0.0.0:' + port

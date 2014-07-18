@@ -1,12 +1,14 @@
 zmq = require 'zmq'
 util = require 'util'
+{EventEmitter} = require 'events'
 {randomString, log} = require './helpers'
 
+VERBOSE = false
 DEFAULT_PROTO = 'tcp'
 DEFAULT_BIND = '0.0.0.0'
 DEFAULT_PORT = 5555
 
-module.exports = class BargeBinding
+module.exports = class BargeBinding extends EventEmitter
 
     constructor: (options={}) ->
         @id = @id || randomString()
@@ -28,4 +30,5 @@ module.exports = class BargeBinding
 
     handleMessage: (client_id, message) ->
         log "<#{ client_id }>: #{ util.inspect message }" if VERBOSE
+        @emit message.kind, client_id, message
 

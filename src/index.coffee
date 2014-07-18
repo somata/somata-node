@@ -5,4 +5,5 @@ module.exports =
     Binding: require './binding'
     Registry: require './registry'
     RegistryConnection: require './registry-connection'
+    helpers: require './helpers'
 

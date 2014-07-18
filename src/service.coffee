@@ -1,106 +1,177 @@
 os = require 'os'
 util = require 'util'
-zmq = require 'zmq'
-{log, randomString} = require './helpers'
+helpers = require './helpers'
 _ = require 'underscore'
+{EventEmitter} = require 'events'
+ConsulAgent = require './consul-agent'
 Binding = require './binding'
-Registry = require './registry'
-RegistryConnection = require './registry-connection'
+log = helpers.log
 
-VERBOSE = false
+VERBOSE = true
 
-getHostname = os.hostname
-getIP = ->
-    _.chain(os.networkInterfaces())
-    .flatten().filter((i) -> i.family=='IPv4' and !i.internal)
-    .pluck('address').first().value()
-getHost = ->
-    if host = process.env.BARGE_SERVICE_HOST
-        return host
-    else if process.env.BARGE_USE_HOSTNAME
-        return getHostname()
+# Descend down an object tree {one: {two: 3}} with a path 'one.two'
+descend = (o, c) ->
+    if c.length == 1
+        return o[c[0]].bind(o)
     else
-        return getIP()
+        return descend o[c.shift()], c
 
-randomPort = ->
-    10000 + Math.floor(Math.random()*50000)
-
-class Service
-
-    methods: {}
+class Service extends EventEmitter
 
     # Instatiate a Barge service
     # --------------------------------------------------------------------------
 
-    constructor: (@name, @options={}) ->
-        # Copy methods over from options
-        _.extend @methods, @options.methods if @options.methods?
+    constructor: (@name, @methods={}, options={}) ->
+        @id = @name + '~' + helpers.randomString()
 
-        # Determine service host and port
-        @options.binding ||= {}
-        @options.binding.host ||= getHost()
-        @options.binding.port ||= randomPort()
+        # Determine service port
+        @binding = options.binding || {}
+        @binding.proto = options.proto || 'tcp'
+        @binding.port = options.port || helpers.randomPort()
 
-        @options.registry ||= Registry.DEFAULTS
+        # Create connections
+        @consul_agent = new ConsulAgent
+        @service_binding = new Binding @binding
 
-        # Bind and register
-        @service_binding = new Binding @options.binding
-        @bind()
-        @registry_connection = new RegistryConnection @options.registry
-        @sendRegister()
+        # Bind event handlers
+        @service_binding.on 'method', @handleMethod.bind(@)
+        @service_binding.on 'subscribe', @handleSubscribe.bind(@)
+        #@service_binding.on 'status', @handleStatus.bind(@)
 
-    # Bind the service socket
+        # Register the service
+        @register()
+
+        # Deregister when quit
+        process.on 'SIGINT', =>
+            @deregister ->
+                process.exit()
+
+    # Handle a remote method call
     # --------------------------------------------------------------------------
 
-    bind: ->
-        @service_binding.handleMessage = @handleClientMessage.bind(@)
-
-    # Send a `register` message to the Barge registry
-    # --------------------------------------------------------------------------
-
-    sendRegister: ->
-        @registry_connection.register
-            name: @name
-            binding: @options.binding
-        @registry_connection.handleMessage = @handleRegistryMessage.bind(@)
-
-    # Handle a message from the registry
-    # --------------------------------------------------------------------------
-    #
-    # If the message is the `register?` command, re-register
-
-    handleRegistryMessage: (message) ->
-        log "<registry>: #{ util.inspect message, depth: null }" if VERBOSE
-
-        if message.command == 'register?'
-            @sendRegister()
-
-    # Handle a message from a client
-    # --------------------------------------------------------------------------
-    # 
-    # Looks for the requested method in `@methods` and executes it with the
-    # arguments contained in the message
-
-    handleClientMessage: (client_id, message) =>
+    handleMethod: (client_id, message) ->
         log "<#{ client_id }>: #{ util.inspect message, depth: null }" if VERBOSE
 
         # Find the method
-        if _method = @methods[message.method]
+        method_name = message.method
+        if _method = @getMethod method_name
 
-            # Execute the method with the arguments
-            log 'Executing ' + message.method if VERBOSE
-            _method message.args..., (err, response) =>
+            # Define our response methods
 
-                # Respond to the client
+            _sendResponse = (response) =>
                 @service_binding.send client_id,
                     id: message.id
-                    type: 'response'
+                    kind: 'response'
                     response: response
+
+            _sendError = (error) =>
+                @service_binding.send client_id,
+                    id: message.id
+                    kind: 'error'
+                    error: error
+
+            # Execute the method with the arguments
+            log 'Executing ' + method_name if VERBOSE
+            try
+
+                _method message.args..., (err, response) =>
+                    if err
+                        _sendError err
+                    else
+                        _sendResponse response
+
+            catch e
+                # Catch unhandled errors
+                err = e.toString()
+                arity_mismatch = (message.args.length != _method.length - 1)
+                if arity_mismatch &&
+                    e instanceof TypeError &&
+                    err.slice(11) == 'undefined is not a function'
+                        err = "ArityError? method `#{ method_name }` takes #{ _method.length-1 } arguments."
+                _sendError err
 
         # Method not found for this service
         else
             # TODO: Send a failure message to client
             log.i 'No method ' + message.method
+
+    getMethod: (method_name) ->
+        # Look for builtins, having method names starting with a `_`
+        if (method_name[0] == '_')
+            method_name = method_name.slice(1)
+            _method = @[method_name]
+            return _method
+        # Get a deeper level method from @methods
+        if (method_context = method_name.split('.')).length > 1
+            return descend @methods, method_context
+        # Get a method from @methods
+        else
+            return @methods[method_name]
+
+    # Handle a subscription request
+    # --------------------------------------------------------------------------
+    #
+    # TODO
+
+    subscriptions: {}
+
+    handleSubscribe: (client_id, message) ->
+        type = message.type
+        subscription_id = message.id
+        subscription_key = [client_id, subscription_id].join(':')
+        @subscriptions[type] ||= []
+        @subscriptions[type].push subscription_key
+
+    publish: (type, event) ->
+        if subscriptions = @subscriptions[type]
+            subscriptions.forEach (subscription_key) =>
+                [client_id, subscription_id] = subscription_key.split(':')
+                @service_binding.send client_id,
+                    id: subscription_id
+                    kind: 'event'
+                    event: event
+
+    # Handle a status request
+    # --------------------------------------------------------------------------
+
+    handleStatus: (cb) ->
+        cb null,
+            health: 'ok'
+            uptime: process.uptime()
+            memory: process.memoryUsage()
+            load: os.loadavg()
+
+    # Register and deregister the service from the registry
+    # --------------------------------------------------------------------------
+    #
+    # TODO: Abstract so that some registry service besides Consul may be used
+
+    register: (cb) ->
+        # Register the service itself
+        @consul_agent.registerService
+            Name: @name
+            Id: @id
+            Port: @binding.port
+            Tags: ["proto:#{@binding.proto}"]
+            Check:
+                Interval: 60
+                TTL: "10s"
+
+        , (err, registered) =>
+            # Start the TTL check
+            @startChecks()
+            log.s "Registered `#{ @name }` on :#{ @binding.port }"
+            cb(null, registered) if cb?
+
+    startChecks: ->
+        setInterval (=>
+            @consul_agent.checkPass 'service:' + @id
+        ), 9000
+
+    deregister: (cb) ->
+        @consul_agent.deregisterService @id, (err, deregistered) =>
+            log.e "Deregistered `#{ @name }` from :#{ @binding.port }"
+            cb(null, deregistered) if cb?
 
 module.exports = Service
 

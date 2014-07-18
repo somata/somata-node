@@ -1,13 +1,14 @@
 zmq = require 'zmq'
 util = require 'util'
 _ = require 'underscore'
+{EventEmitter} = require 'events'
 {log, randomString} = require './helpers'
 
 VERBOSE = false
 DEFAULT_PROTO = 'tcp'
 DEFAULT_CONNECT = 'localhost'
 
-module.exports = class Connection
+module.exports = class Connection extends EventEmitter
 
     # Store pending response callbacks
     # --------------------------------------------------------------------------
@@ -49,7 +50,7 @@ module.exports = class Connection
         @socket.on 'message', (message_json) =>
             @handleMessage JSON.parse message_json
 
-        log "Socket #{ @id } connected to #{ @address }..."
+        log "Socket #{ @id } connected to #{ @address }..." if VERBOSE
 
     # Handle a message from the connected-to service
     # --------------------------------------------------------------------------
@@ -60,7 +61,14 @@ module.exports = class Connection
     handleMessage: (message) ->
         log ">: #{ util.inspect message }" if VERBOSE
         if on_response = @pending_responses[message.id]
-            on_response(null, message)
+            if message.kind == 'response'
+                on_response(null, message.response)
+                delete @pending_responses[message.id]
+            else if message.kind == 'error'
+                on_response(message.error, null)
+                delete @pending_responses[message.id]
+            else if message.kind == 'event'
+                on_response(null, message.event)
 
     # Send a message to the connected-to service
     # --------------------------------------------------------------------------
@@ -70,12 +78,32 @@ module.exports = class Connection
     # with the same ID when it has a response.
 
     send: (message, on_response) ->
-        message.id = randomString 16
+        message.id ||= randomString 16
         @socket.send JSON.stringify message
         if on_response?
             @pending_responses[message.id] = on_response
         return message
 
+    sendMethod: (method, args..., cb) ->
+        method_msg =
+            kind: 'method'
+            method: method
+            args: args
+        @send method_msg, cb
+
+    sendSubscribe: (type, cb) ->
+        subscribe_msg =
+            kind: 'subscribe'
+            type: type
+        @send subscribe_msg, cb
+
     close: ->
         @socket.close()
+
+# Class methods
+
+Connection.fromConsulService = (instance) ->
+    return new Connection
+        host: instance.Node.Address
+        port: instance.Service.Port
 

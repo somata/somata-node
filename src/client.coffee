@@ -1,72 +1,93 @@
 util = require 'util'
-{log, randomString, serviceSummary} = require './helpers'
+helpers = require './helpers'
 _ = require 'underscore'
+ConsulAgent = require './consul-agent'
 Connection = require './connection'
-Registry = require './registry'
+log = helpers.log
 
-class Client
+VERBOSE = false
+KEEPALIVE = true
+CONNECTION_TIMEOUT = 6500
+CONNECTION_LINGER = 1500
 
-    service_connections: {}
+Client = (@options={}) ->
+    @consul_agent = new ConsulAgent
+    return @
 
-    constructor: (@options={}) ->
-        @options.registry ||= {}
-        @options.registry = _.defaults @options.registry, Registry.DEFAULTS
-        @registry_connection = new Connection @options.registry
+# Keep track of existing connections by service name
 
-    sendQuery: (service_name, on_response) ->
-        @registry_connection.send
-            type: 'query'
-            args:
-                service_name: service_name
-        , (err, response) ->
-            on_response response.service
+Client::service_connections = {}
 
-    remote: (service_name, method, args..., cb) ->
+# Execute a service's remote method
 
-        # Send method to service once connected
-        @getServiceConnection service_name, (err, service_connection) ->
-            service_connection.send
-                type: 'method'
-                method: method
-                args: args
-            , (err, response) ->
-                #log "Got response: " + util.inspect(response), color: 'green'
-                cb null, response.response
+Client::remote = (service_name, method, args..., cb) ->
+    @getServiceConnection service_name, (err, service_connection) ->
+        if err
+            log.e err
+        else
+            service_connection.sendMethod method, args..., cb
 
-    # Queries for and connects to a service
-    getServiceConnection: (service_name, cb) ->
+Client::on = (service_name, type, cb) ->
+    @getServiceConnection service_name, (err, service_connection) ->
+        if err
+            log.e err
+        else
+            service_connection.sendSubscribe type, cb
 
-        # Check if already connected
-        if service_connection = @service_connections[service_name]
+# Queries for and connects to a service
+
+Client::getServiceConnection = (service_name, cb) ->
+
+    if service_connection = @service_connections[service_name]
+        # Use an existing connection
+        cb null, service_connection
+
+    else
+        # Otherwise ask the consul agent
+        @getServiceHealth service_name, (err, instances) =>
+
+            # Filter by those with passing checks
+            healthy_instances = instances.filter((i) ->
+                i.Checks.filter((c) ->
+                    c.Status == 'critical'
+                ).length == 0
+            )
+
+            if !healthy_instances.length
+                return cb "Could not find service", null
+
+            # Choose one of the available instances and connect
+            instance = helpers.randomChoice healthy_instances
+            service_connection = @connectToService instance
+
+            # Save for later use
+            @saveServiceConnection service_name, service_connection
             cb null, service_connection
 
-        # Otherwise ask registry
-        else
-            @sendQuery service_name, (service) =>
-                if !service?
-                    log "Could not find service", color: 'yellow'
+# Ask the Consul agent for a service's available nodes
 
-                else
-                    log "Found service #{ serviceSummary service }", color: 'green'
-                    service_connection = @connectToService service
+Client::getServiceHealth = (service_name, cb) ->
+    @consul_agent.getServiceHealth service_name, cb
 
-                    # Save for further use
-                    @saveServiceConnection service_name, service_connection
-                    cb null, service_connection
+# Connect to a service at a found node's address & port
 
-    # Connect to service if it isn't already connected
-    connectToService: (service) ->
-        service_connection = new Connection service.binding
+Client::connectToService = (instance) ->
+    log.s "[connectToService] Connecting to #{ util.inspect instance }" if VERBOSE
+    connection = Connection.fromConsulService instance
+    return connection
 
-    # Save a connection to a service by name
-    # TODO: Expire
-    saveServiceConnection: (service_name, service_connection) ->
-        @service_connections[service_name] = service_connection
-        setTimeout @killConnection.bind(@, service_name, service_connection), 1500
+# Save a connection to a service by name
 
-    killConnection: (service_name, service_connection) ->
-        setTimeout (-> service_connection.close()), 1000
-        delete @service_connections[service_name]
+Client::saveServiceConnection = (service_name, service_connection) ->
+    @service_connections[service_name] = service_connection
+    if !KEEPALIVE
+        setTimeout @killConnection.bind(@, service_name, service_connection), CONNECTION_TIMEOUT
+
+# Kill an existing connection
+
+Client::killConnection = (service_name, service_connection) ->
+    setTimeout (-> service_connection.close()), CONNECTION_LINGER
+    delete @service_connections[service_name]
 
 module.exports = Client
 
