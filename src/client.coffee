@@ -6,7 +6,7 @@ Connection = require './connection'
 log = helpers.log
 
 VERBOSE = false
-KEEPALIVE = true
+KEEPALIVE = false
 CONNECTION_TIMEOUT = 6500
 CONNECTION_LINGER = 1500
 

@@ -88,6 +88,7 @@ module.exports = class SomataService extends EventEmitter
                     e instanceof TypeError &&
                     err.slice(11) == 'undefined is not a function'
                         err = "ArityError? method `#{ method_name }` takes #{ _method.length-1 } arguments."
+                log.e '[ERROR] ' + err
                 _sendError err
 
         # Method not found for this service
