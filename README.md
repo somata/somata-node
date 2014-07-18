@@ -1,19 +1,17 @@
 Somata
 =====
 
-Node.js micro-service orchestration framework; inspired by Seaport and ZeroRPC
-
-Somata lets you quickly compose networked distributed systems from a collection of services. Services register their network location with the Somata registry, clients query for available services and connect to use their methods from afar.
+Micro-service orchestration framework built on [Consul](http://www.consul.io) and [ZeroMQ](http://zeromq.org).
 
 # Usage
 
-Define a service with `new somata.Service(name, options)`:
+Define a service with `new somata.Service(name, methods, [options])`:
 
 ```coffee
 somata = require 'somata'
 
 # Create a new Somata service named 'hello'
-hello_service = new somata.Service 'hello', methods:
+hello_service = new somata.Service 'hello',
 
     # With a few methods
 
@@ -24,7 +22,7 @@ hello_service = new somata.Service 'hello', methods:
         cb null, 'Goodbye, cruel ' + name + '!'
 ```
 
-Define a client with `new somata.Client(options)`:
+Define a client with `new somata.Client([options])`:
 
 ```coffee
 somata = require 'somata'
@@ -44,12 +42,9 @@ hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->
         process.exit()
 ```
 
-Start the registry and service, then run the client:
+Start the service, then run the client:
 
 ```sh
-$ somata-registry &
-Somata registry listening on localhost:9010...
-
 $ coffee hello-service.coffee &
 Somata service listening on localhost:15555...
 
@@ -66,9 +61,4 @@ To get the somata library, with [npm](http://npmjs.org) do:
 $ npm install somata
 ```
 
-To get the `somata-registry` command, do:
-
-```sh
-$ npm install -g somata
-```
-
+To install Consul, read [their installation instructions](http://www.consul.io/intro/getting-started/install.html).
