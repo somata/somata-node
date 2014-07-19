@@ -5,8 +5,8 @@ ConsulAgent = require './consul-agent'
 Connection = require './connection'
 log = helpers.log
 
-VERBOSE = false
-KEEPALIVE = false
+VERBOSE = process.env.SOMATA_VERBOSE || false
+KEEPALIVE = process.env.SOMATA_KEEPALIVE || false
 CONNECTION_TIMEOUT = 6500
 CONNECTION_LINGER = 1500
 
