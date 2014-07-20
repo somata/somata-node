@@ -17,7 +17,8 @@ exports.log = log = (s, options={}) ->
     ansi.fg[options.color]() if options.color?
     ansi.write s + '\n'
     ansi.reset()
-log.i = (s) -> log s, color: 'yellow'
+log.w = (s) -> log s, color: 'yellow'
+log.i = (s) -> log s, color: 'cyan'
 log.e = (s) -> log s, color: 'red'
 log.d = (s) -> log s, color: 'grey'
 log.s = (s) -> log s, color: 'green'

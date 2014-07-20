@@ -7,7 +7,7 @@ ConsulAgent = require './consul-agent'
 Binding = require './binding'
 log = helpers.log
 
-VERBOSE = true
+VERBOSE = false
 
 # Descend down an object tree {one: {two: 3}} with a path 'one.two'
 descend = (o, c) ->
@@ -24,27 +24,27 @@ module.exports = class SomataService extends EventEmitter
     constructor: (@name, @methods={}, options={}) ->
         @id = @name + '~' + helpers.randomString()
 
-        # Determine service port
-        @binding = options.binding || {}
-        @binding.proto = options.proto || 'tcp'
-        @binding.port = options.port || helpers.randomPort()
+        # Determine options
+        @rpc_options = options.rpc_options || {}
+        @pub_options = options.pub_options || {}
 
-        # Create connections
+        # Connect to registry (Consul)
         @consul_agent = new ConsulAgent
-        @service_binding = new Binding @binding
 
-        # Bind event handlers
-        @service_binding.on 'method', @handleMethod.bind(@)
-        @service_binding.on 'subscribe', @handleSubscribe.bind(@)
-        #@service_binding.on 'status', @handleStatus.bind(@)
-
-        # Register the service
-        @register()
+        # Bind and register the service
+        @checkBindingPort =>
+            @bindRPC()
+            @register()
 
         # Deregister when quit
         process.on 'SIGINT', =>
             @deregister ->
                 process.exit()
+
+    bindRPC: ->
+        @rpc_binding = new Binding @rpc_options
+        @rpc_binding.on 'method', @handleMethod.bind(@)
+        @rpc_binding.on 'subscribe', @handleSubscribe.bind(@)
 
     # Handle a remote method call
     # --------------------------------------------------------------------------
@@ -59,13 +59,13 @@ module.exports = class SomataService extends EventEmitter
             # Define our response methods
 
             _sendResponse = (response) =>
-                @service_binding.send client_id,
+                @rpc_binding.send client_id,
                     id: message.id
                     kind: 'response'
                     response: response
 
             _sendError = (error) =>
-                @service_binding.send client_id,
+                @rpc_binding.send client_id,
                     id: message.id
                     kind: 'error'
                     error: error
@@ -127,7 +127,7 @@ module.exports = class SomataService extends EventEmitter
         if subscriptions = @subscriptions[type]
             subscriptions.forEach (subscription_key) =>
                 [client_id, subscription_id] = subscription_key.split(':')
-                @service_binding.send client_id,
+                @rpc_binding.send client_id,
                     id: subscription_id
                     kind: 'event'
                     event: event
@@ -152,8 +152,8 @@ module.exports = class SomataService extends EventEmitter
         @consul_agent.registerService
             Name: @name
             Id: @id
-            Port: @binding.port
-            Tags: ["proto:#{@binding.proto}"]
+            Port: @rpc_binding.port
+            Tags: ["proto:#{@rpc_binding.proto}"]
             Check:
                 Interval: 60
                 TTL: "10s"
@@ -161,8 +161,17 @@ module.exports = class SomataService extends EventEmitter
         , (err, registered) =>
             # Start the TTL check
             @startChecks()
-            log.s "Registered `#{ @name }` on :#{ @binding.port }"
+            log.s "Registered `#{ @name }` on :#{ @rpc_binding.port }"
             cb(null, registered) if cb?
+
+    # Check for existing unhealthy instance ports to connect as
+    checkBindingPort: (cb) ->
+        @consul_agent.getUnhealthyServiceInstances @name, (err, unhealthy_instances) =>
+            if unhealthy_instances.length
+                @rpc_options.port = (helpers.randomChoice unhealthy_instances).Service.Port
+            else
+                @rpc_options.port = helpers.randomPort()
+            cb()
 
     startChecks: ->
         setInterval (=>
@@ -171,6 +180,6 @@ module.exports = class SomataService extends EventEmitter
 
     deregister: (cb) ->
         @consul_agent.deregisterService @id, (err, deregistered) =>
-            log.e "Deregistered `#{ @name }` from :#{ @binding.port }"
+            log.e "Deregistered `#{ @name }` from :#{ @rpc_binding.port }"
             cb(null, deregistered) if cb?
 

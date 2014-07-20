@@ -6,17 +6,18 @@ util = require 'util'
 VERBOSE = false
 DEFAULT_PROTO = 'tcp'
 DEFAULT_BIND = '0.0.0.0'
-DEFAULT_PORT = 5555
 
-module.exports = class SomataBinding extends EventEmitter
+module.exports = class Binding extends EventEmitter
 
     constructor: (options={}) ->
         @id = @id || randomString()
 
         @proto = options.proto || DEFAULT_PROTO
         @host = DEFAULT_BIND
-        @port = options.port || DEFAULT_PORT
+        @port = options.port
         @address = @proto + '://' + @host + ':' + @port
+
+        throw new Error("No port specified") if !@port
 
         @socket = zmq.socket 'router'
         @socket.bindSync @address

@@ -7,11 +7,13 @@ log = helpers.log
 
 VERBOSE = process.env.SOMATA_VERBOSE || false
 KEEPALIVE = process.env.SOMATA_KEEPALIVE || false
-CONNECTION_TIMEOUT = 6500
-CONNECTION_LINGER = 1500
+CONNECTION_TIMEOUT_MS = 6500
+CONNECTION_LINGER_MS = 1500
+CONNECTION_RETRY_MS = 2500
 
 Client = (@options={}) ->
     @consul_agent = new ConsulAgent
+    @subscriptions = {}
     return @
 
 # Keep track of existing connections by service name
@@ -19,6 +21,9 @@ Client = (@options={}) ->
 Client::service_connections = {}
 
 # Execute a service's remote method
+
+Client::call = (service_name, method, args..., cb) ->
+    @remote service_name, method, args..., cb
 
 Client::remote = (service_name, method, args..., cb) ->
     @getServiceConnection service_name, (err, service_connection) ->
@@ -28,11 +33,26 @@ Client::remote = (service_name, method, args..., cb) ->
             service_connection.sendMethod method, args..., cb
 
 Client::on = (service_name, type, cb) ->
-    @getServiceConnection service_name, (err, service_connection) ->
+    @subscribe service_name, type, cb
+
+Client::subscribe = (service_name, type, cb) ->
+    _retry_subscribe = (=> @subscribe service_name, type, cb)
+    @getServiceConnection service_name, (err, service_connection) =>
+
         if err
-            log.e err
+            # Attempt to retry subscription if the service was not found
+            log.e err + "... retrying in #{ CONNECTION_RETRY_MS/1000 }s"
+            setTimeout _retry_subscribe, CONNECTION_RETRY_MS
+
         else
-            service_connection.sendSubscribe type, cb
+            # If we've got a connection, send a subscription message with it
+            service = service_connection.service
+            subscription = service_connection.sendSubscribe type, cb
+
+            # Attempt to resubscribe if the service is deregistered
+            @consul_agent.once 'deregister:services/' + service.ID, =>
+                delete service_connection.pending_responses[subscription.id]
+                _retry_subscribe()
 
 # Queries for and connects to a service
 
@@ -43,51 +63,55 @@ Client::getServiceConnection = (service_name, cb) ->
         cb null, service_connection
 
     else
-        # Otherwise ask the consul agent
-        @getServiceHealth service_name, (err, instances) =>
 
-            # Filter by those with passing checks
-            healthy_instances = instances.filter((i) ->
-                i.Checks.filter((c) ->
-                    c.Status == 'critical'
-                ).length == 0
-            )
+        @consul_agent.getHealthyServiceInstances service_name, (err, healthy_instances) =>
 
             if !healthy_instances.length
-                return cb "Could not find service", null
+                return cb "Could not find service `#{ service_name }`", null
 
             # Choose one of the available instances and connect
             instance = helpers.randomChoice healthy_instances
             service_connection = @connectToService instance
 
             # Save for later use
-            @saveServiceConnection service_name, service_connection
+            @saveServiceConnection instance.Service, service_connection
             cb null, service_connection
-
-# Ask the Consul agent for a service's available nodes
-
-Client::getServiceHealth = (service_name, cb) ->
-    @consul_agent.getServiceHealth service_name, cb
 
 # Connect to a service at a found node's address & port
 
 Client::connectToService = (instance) ->
-    log.s "[connectToService] Connecting to #{ util.inspect instance }" if VERBOSE
+    log.i "[connectToService] Connecting to #{ instance.Service.Service } @ #{ instance.Node.Node } <#{ instance.Node.Address }:#{ instance.Service.Port }>" if VERBOSE
     connection = Connection.fromConsulService instance
     return connection
 
 # Save a connection to a service by name
 
-Client::saveServiceConnection = (service_name, service_connection) ->
-    @service_connections[service_name] = service_connection
-    if !KEEPALIVE
-        setTimeout @killConnection.bind(@, service_name, service_connection), CONNECTION_TIMEOUT
+Client::saveServiceConnection = (service, service_connection) ->
+    service_connection.service = service
+    @service_connections[service.Service] = service_connection
+
+    if KEEPALIVE
+        @consul_agent.once 'deregister:services/' + service.ID, =>
+            @killConnection service.Service
+
+    else
+        setTimeout (=> @killConnection service.Service), CONNECTION_TIMEOUT_MS
+
+# Check for unhealthy services on an interval and kill connections
+
+Client::purgeDeadServiceConnections = ->
+    @getUnhealthyServiceInstances (err, unhealthy_instances) =>
+        unhealthy_instances.each (instance) =>
+            if @service_connections[instance.Service.Service]?
+                @killConnection instance.Service.Service
 
 # Kill an existing connection
 
-Client::killConnection = (service_name, service_connection) ->
-    setTimeout (-> service_connection.close()), CONNECTION_LINGER
+Client::killConnection = (service_name) ->
+    log.w '[killConnection] ' + service_name if VERBOSE
+    connection = @service_connections[service_name]
     delete @service_connections[service_name]
+    setTimeout (-> connection.close()), CONNECTION_LINGER_MS
 
 module.exports = Client
 
