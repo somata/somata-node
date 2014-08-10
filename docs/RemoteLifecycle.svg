@@ -1,0 +1,568 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="1600"
+   height="1000"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.5 r10040"
+   sodipodi:docname="New document 1">
+  <defs
+     id="defs4">
+    <marker
+       inkscape:stockid="Arrow2Lend"
+       orient="auto"
+       refY="0"
+       refX="0"
+       id="Arrow2Lend"
+       style="overflow:visible">
+      <path
+         id="path3896"
+         style="fill-rule:evenodd;stroke-width:0.625;stroke-linejoin:round"
+         d="M 8.7185878,4.0337352 -2.2072895,0.01601326 8.7185884,-4.0017078 c -1.7454984,2.3720609 -1.7354408,5.6174519 -6e-7,8.035443 z"
+         transform="matrix(-1.1,0,0,-1.1,-1.1,0)"
+         inkscape:connector-curvature="0" />
+    </marker>
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.70710678"
+     inkscape:cx="789.13325"
+     inkscape:cy="510.10459"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     units="px"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:snap-bbox="true"
+     inkscape:bbox-paths="true"
+     inkscape:window-width="1660"
+     inkscape:window-height="988"
+     inkscape:window-x="10"
+     inkscape:window-y="31"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-52.35971)">
+    <rect
+       y="284.1709"
+       x="1234.4125"
+       height="701.65894"
+       width="294.59799"
+       id="rect5201"
+       style="fill:#e1eeea;fill-opacity:0.29743593;stroke:#161616;stroke-width:0;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
+    <rect
+       style="fill:#e2eee1;fill-opacity:0.34358975;stroke:#161616;stroke-width:0;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect5199"
+       width="291.76956"
+       height="690.44574"
+       x="66.88224"
+       y="295.38409" />
+    <rect
+       style="fill:#f5f5f5;fill-opacity:1;fill-rule:evenodd;stroke:#6b6b6b;stroke-width:0.42261514;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect2985"
+       width="173.99445"
+       height="59.677414"
+       x="907.60626"
+       y="285.08566" />
+    <text
+       xml:space="preserve"
+       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Roboto;-inkscape-font-specification:Roboto Medium"
+       x="994.55951"
+       y="322.11676"
+       id="text3755"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3757"
+         x="994.55951"
+         y="322.11676">Service</tspan></text>
+    <rect
+       y="285.08566"
+       x="512.16144"
+       height="59.677414"
+       width="176.33316"
+       id="rect3759"
+       style="fill:#f5f5f5;fill-opacity:1;fill-rule:evenodd;stroke:#6b6b6b;stroke-width:0.42544591;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none" />
+    <text
+       sodipodi:linespacing="125%"
+       id="text3761"
+       y="322.32672"
+       x="600.09369"
+       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Roboto;-inkscape-font-specification:Roboto Medium"
+       xml:space="preserve"><tspan
+         y="322.32672"
+         x="600.09369"
+         id="tspan3763"
+         sodipodi:role="line">Client</tspan></text>
+    <rect
+       style="fill:#f5f5f5;fill-opacity:1;fill-rule:evenodd;stroke:#6b6b6b;stroke-width:0.42280197;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       id="rect3765"
+       width="173.91522"
+       height="59.757401"
+       x="711.37042"
+       y="284.04565" />
+    <text
+       xml:space="preserve"
+       style="font-size:20px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Roboto;-inkscape-font-specification:Roboto Medium"
+       x="797.67377"
+       y="319.0806"
+       id="text3767"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3769"
+         x="797.67377"
+         y="319.0806">Registry</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.62254888;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3.73529346, 3.73529346;stroke-dashoffset:0"
+       d="m 798.32805,344.01866 0,641.81119"
+       id="path3771"
+       inkscape:connector-curvature="0" />
+    <rect
+       style="fill:#f5f5f5;fill-opacity:1;stroke:#929292;stroke-width:0.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0"
+       id="rect3773"
+       width="175"
+       height="45"
+       x="710.82806"
+       y="412.01865" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+       x="797.72748"
+       y="439.01865"
+       id="text3775"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3777"
+         x="797.72748"
+         y="439.01865">handleRegister</tspan></text>
+    <path
+       inkscape:connector-curvature="0"
+       id="path3785"
+       d="m 994.6034,345.56244 0,640.26741"
+       style="fill:none;stroke:#000000;stroke-width:0.62179971;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3.73079841, 3.73079841;stroke-dashoffset:0" />
+    <rect
+       y="361.01868"
+       x="907.10345"
+       height="45"
+       width="175"
+       id="rect3779"
+       style="fill:#f5f5f5;fill-opacity:1;stroke:#929292;stroke-width:0.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0" />
+    <text
+       sodipodi:linespacing="125%"
+       id="text3781"
+       y="389.31155"
+       x="994.20789"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+       xml:space="preserve"><tspan
+         y="389.31155"
+         x="994.20789"
+         id="tspan3783"
+         sodipodi:role="line">registerService</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.62104964;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3.72629794, 3.72629794;stroke-dashoffset:0"
+       d="m 600.32805,347.10622 0,638.72363"
+       id="path3787"
+       inkscape:connector-curvature="0" />
+    <rect
+       y="526.01868"
+       x="512.82806"
+       height="45"
+       width="175"
+       id="rect3789"
+       style="fill:#f5f5f5;fill-opacity:1;stroke:#929292;stroke-width:0.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0" />
+    <text
+       sodipodi:linespacing="125%"
+       id="text3791"
+       y="553.01868"
+       x="600.4599"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+       xml:space="preserve"><tspan
+         y="553.01868"
+         x="600.4599"
+         id="tspan3793"
+         sodipodi:role="line">queryRegistry</tspan></text>
+    <rect
+       style="fill:#f5f5f5;fill-opacity:1;stroke:#929292;stroke-width:0.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0"
+       id="rect3795"
+       width="175"
+       height="45"
+       x="512.82806"
+       y="464.01865" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+       x="599.93256"
+       y="491.01868"
+       id="text3797"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3799"
+         x="599.93256"
+         y="491.01868">remote</tspan></text>
+    <rect
+       style="fill:#f5f5f5;fill-opacity:1;stroke:#929292;stroke-width:0.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0"
+       id="rect3801"
+       width="175"
+       height="45"
+       x="512.82806"
+       y="622.01868" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+       x="600.23529"
+       y="649.01868"
+       id="text3803"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3805"
+         x="600.23529"
+         y="649.01868">connectToService</tspan></text>
+    <rect
+       y="574.01868"
+       x="710.82806"
+       height="45"
+       width="175"
+       id="rect3807"
+       style="fill:#f5f5f5;fill-opacity:1;stroke:#929292;stroke-width:0.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0" />
+    <text
+       sodipodi:linespacing="125%"
+       id="text3809"
+       y="603.01868"
+       x="797.72748"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+       xml:space="preserve"><tspan
+         y="603.01868"
+         x="797.72748"
+         id="tspan3811"
+         sodipodi:role="line">handleQuery</tspan></text>
+    <rect
+       y="686.01868"
+       x="512.82806"
+       height="45"
+       width="175"
+       id="rect3813"
+       style="fill:#f5f5f5;fill-opacity:1;stroke:#929292;stroke-width:0.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0" />
+    <text
+       sodipodi:linespacing="125%"
+       id="text3815"
+       y="715.01868"
+       x="600.23529"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+       xml:space="preserve"><tspan
+         y="715.01868"
+         x="600.23529"
+         id="tspan3817"
+         sodipodi:role="line">sendMethod</tspan></text>
+    <rect
+       style="fill:#f5f5f5;fill-opacity:1;stroke:#929292;stroke-width:0.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0"
+       id="rect3819"
+       width="175"
+       height="45"
+       x="907.10345"
+       y="735.01868" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+       x="994.20789"
+       y="762.01868"
+       id="text3821"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3823"
+         x="994.20789"
+         y="762.01868">handleMethod</tspan></text>
+    <rect
+       y="799.01868"
+       x="907.10345"
+       height="45"
+       width="175"
+       id="rect3825"
+       style="fill:#f5f5f5;fill-opacity:1;stroke:#929292;stroke-width:0.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0" />
+    <text
+       sodipodi:linespacing="125%"
+       id="text3827"
+       y="826.01868"
+       x="994.20789"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+       xml:space="preserve"><tspan
+         y="826.01868"
+         x="994.20789"
+         id="tspan3829"
+         sodipodi:role="line">sendResponse</tspan></text>
+    <rect
+       style="fill:#f5f5f5;fill-opacity:1;stroke:#929292;stroke-width:0.5;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:3, 3;stroke-dashoffset:0"
+       id="rect3831"
+       width="175"
+       height="45"
+       x="512.82806"
+       y="841.01868" />
+    <text
+       xml:space="preserve"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+       x="600.23529"
+       y="868.01868"
+       id="text3833"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3835"
+         x="600.23529"
+         y="868.01868">handleResponse</tspan></text>
+    <rect
+       style="fill:#e2eee1;fill-opacity:1;stroke:#161616;stroke-width:0;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect3865"
+       width="291.76956"
+       height="116"
+       x="66.88224"
+       y="464.01865" />
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot3847"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:110.00000238%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Inconsolata;-inkscape-font-specification:Inconsolata Medium"
+       transform="translate(56.88225,196.01866)"><flowRegion
+         id="flowRegion3849"><rect
+           id="rect3851"
+           width="259"
+           height="230"
+           x="28"
+           y="284"
+           style="font-size:16px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Inconsolata;-inkscape-font-specification:Inconsolata Medium" /></flowRegion><flowPara
+         id="flowPara3853"
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono">client.<flowSpan
+   style="font-size:16px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono Bold"
+   id="flowSpan4317">remote</flowSpan></flowPara><flowPara
+         id="flowPara3855"
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono">    &quot;soundberry&quot;,</flowPara><flowPara
+         id="flowPara3857"
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono">    &quot;setVolume&quot;,</flowPara><flowPara
+         id="flowPara3859"
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono">    35,</flowPara><flowPara
+         id="flowPara3863"
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono">    onSetVolume</flowPara></flowRoot>    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
+       d="m 373.88225,485.01866 128,0"
+       id="path3869"
+       inkscape:connector-curvature="0" />
+    <rect
+       y="282.1709"
+       x="66.88224"
+       height="65.08831"
+       width="291.76956"
+       id="rect4319"
+       style="fill:#e2eee1;fill-opacity:1;stroke:#161616;stroke-width:0;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
+    <flowRoot
+       transform="translate(56.88225,14.170887)"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:110.00000238%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Inconsolata;-inkscape-font-specification:Inconsolata Medium"
+       id="flowRoot4321"
+       xml:space="preserve"><flowRegion
+         id="flowRegion4323"><rect
+           style="font-size:16px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Inconsolata;-inkscape-font-specification:Inconsolata Medium"
+           y="284"
+           x="28"
+           height="230"
+           width="259"
+           id="rect4325" /></flowRegion><flowPara
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+         id="flowPara4337">client =</flowPara><flowPara
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+         id="flowPara4357">    new somata.<flowSpan
+   style="font-size:16px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono Bold"
+   id="flowSpan4359">Client</flowSpan></flowPara></flowRoot>    <path
+       inkscape:connector-curvature="0"
+       id="path4361"
+       d="m 373.88225,315.31303 128,0"
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
+       d="m 1221.1307,315.2778 -128,0"
+       id="path4363"
+       inkscape:connector-curvature="0" />
+    <rect
+       style="fill:#e1eeea;fill-opacity:1;stroke:#161616;stroke-width:0;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect4365"
+       width="294.59799"
+       height="65.08831"
+       x="1234.4125"
+       y="284.1709" />
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot4367"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:110.00000238%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Inconsolata;-inkscape-font-specification:Inconsolata Medium"
+       transform="translate(1224.0104,16.170887)"><flowRegion
+         id="flowRegion4369"><rect
+           id="rect4371"
+           width="259"
+           height="230"
+           x="28"
+           y="284"
+           style="font-size:16px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Inconsolata;-inkscape-font-specification:Inconsolata Medium" /></flowRegion><flowPara
+         id="flowPara4373"
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono">soundberry_service =</flowPara><flowPara
+         id="flowPara4375"
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono">    new somata.<flowSpan
+   style="font-size:16px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono Bold"
+   id="flowSpan4379">Service</flowSpan></flowPara></flowRoot>    <rect
+       y="835.8147"
+       x="66.88224"
+       height="48.117748"
+       width="291.76956"
+       id="rect4381"
+       style="fill:#e2eee1;fill-opacity:1;stroke:#161616;stroke-width:0;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
+    <flowRoot
+       transform="translate(56.88225,567.8147)"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:110.00000238%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Inconsolata;-inkscape-font-specification:Inconsolata Medium"
+       id="flowRoot4383"
+       xml:space="preserve"><flowRegion
+         id="flowRegion4385"><rect
+           style="font-size:16px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Inconsolata;-inkscape-font-specification:Inconsolata Medium"
+           y="284"
+           x="28"
+           height="230"
+           width="259"
+           id="rect4387" /></flowRegion><flowPara
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+         id="flowPara4421">onSetVolume(err, <flowSpan
+   style="font-size:16px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono Bold"
+   id="flowSpan4461">response</flowSpan>)</flowPara></flowRoot>    <path
+       inkscape:connector-curvature="0"
+       id="path4401"
+       d="m 502.71027,861.05733 -128,0"
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path4423"
+       d="m 1092.3027,754.61295 128,0"
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)" />
+    <rect
+       y="727.50604"
+       x="1234.4125"
+       height="116"
+       width="294.59799"
+       id="rect4425"
+       style="fill:#e1eeea;fill-opacity:1;stroke:#161616;stroke-width:0;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0" />
+    <flowRoot
+       transform="translate(1224.0104,459.50604)"
+       style="font-size:16px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:110.00000238%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Inconsolata;-inkscape-font-specification:Inconsolata Medium"
+       id="flowRoot4427"
+       xml:space="preserve"><flowRegion
+         id="flowRegion4429"><rect
+           style="font-size:16px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;font-family:Inconsolata;-inkscape-font-specification:Inconsolata Medium"
+           y="284"
+           x="28"
+           height="230"
+           width="259"
+           id="rect4431" /></flowRegion><flowPara
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+         id="flowPara4445"><flowSpan
+   style="font-size:16px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono Bold"
+   id="flowSpan4463">setVolume</flowSpan>: (volume, cb) -&gt;</flowPara><flowPara
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+         id="flowPara4451">    </flowPara><flowPara
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+         id="flowPara4453">    ...</flowPara><flowPara
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+         id="flowPara4455" /><flowPara
+         style="font-size:16px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono"
+         id="flowPara4457">    cb(err, <flowSpan
+   style="font-size:16px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;text-align:start;line-height:110.00000238%;writing-mode:lr-tb;text-anchor:start;font-family:Liberation Mono;-inkscape-font-specification:Liberation Mono Bold"
+   id="flowSpan4465">response</flowSpan>)</flowPara></flowRoot>    <path
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
+       d="m 1221.1307,821.42413 -128,0"
+       id="path4439"
+       inkscape:connector-curvature="0" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path5209"
+       d="m 897.27579,821.42413 c -100.34369,7.08051 -93.9094,41.06242 -200.12489,41.01219"
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
+       sodipodi:nodetypes="cc" />
+    <path
+       sodipodi:nodetypes="cc"
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
+       d="m 696.32287,713.82259 c 100.34369,7.08051 93.9094,41.06242 200.12489,41.01219"
+       id="path5211"
+       inkscape:connector-curvature="0" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path5213"
+       d="m 901.51844,385.98848 c -30.01727,-10.39053 -37.17204,10.74397 -42.44008,19.79899"
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
+       sodipodi:nodetypes="cc" />
+    <path
+       sodipodi:nodetypes="cc"
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
+       d="m 704.94275,437.60728 c -30.01727,-10.39053 -37.17204,10.74396 -42.44008,19.79899"
+       id="path5215"
+       inkscape:connector-curvature="0" />
+    <path
+       inkscape:connector-curvature="0"
+       id="path5217"
+       d="m 704.94275,595.9992 c -30.01727,-10.39053 -37.17204,10.74396 -42.44008,19.79899"
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
+       sodipodi:nodetypes="cc" />
+    <path
+       sodipodi:nodetypes="cc"
+       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#Arrow2Lend)"
+       d="m 694.16989,548.62305 c 30.01727,-10.39053 37.17204,10.74396 42.44008,19.79899"
+       id="path5219"
+       inkscape:connector-curvature="0" />
+    <rect
+       style="fill:#cfcfcf;fill-opacity:1;fill-rule:nonzero;stroke:#e2eee1;stroke-width:0;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect5225"
+       width="1461.9795"
+       height="1.0968674"
+       x="67.419594"
+       y="222.21077" />
+    <text
+       xml:space="preserve"
+       style="font-size:28px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Roboto;-inkscape-font-specification:Roboto Medium"
+       x="66.320053"
+       y="141.22665"
+       id="text5227"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan5229"
+         x="66.320053"
+         y="141.22665"
+         style="font-size:36px;font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;font-family:Roboto;-inkscape-font-specification:Roboto Light">Somata</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5231"
+       y="171.82191"
+       x="66.320053"
+       style="font-size:28px;font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:middle;fill:#bababa;fill-opacity:1;stroke:none;font-family:Roboto;-inkscape-font-specification:Roboto Medium"
+       xml:space="preserve"><tspan
+         y="171.82191"
+         x="66.320053"
+         id="tspan5233"
+         sodipodi:role="line"
+         style="font-size:20px;text-align:start;text-anchor:start;fill:#bababa;fill-opacity:1">Remote execution lifecycle</tspan></text>
+  </g>
+</svg>
