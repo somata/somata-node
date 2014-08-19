@@ -109,9 +109,9 @@ Client::purgeDeadServiceConnections = ->
 
 Client::killConnection = (service_name) ->
     log.w '[killConnection] ' + service_name if VERBOSE
-    connection = @service_connections[service_name]
-    delete @service_connections[service_name]
-    setTimeout (-> connection.close()), CONNECTION_LINGER_MS
+    if connection = @service_connections[service_name]
+        delete @service_connections[service_name]
+        setTimeout (-> connection.close()), CONNECTION_LINGER_MS
 
 module.exports = Client
 
