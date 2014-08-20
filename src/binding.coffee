@@ -1,7 +1,7 @@
 zmq = require 'zmq'
 util = require 'util'
 {EventEmitter} = require 'events'
-{randomString, log} = require './helpers'
+{randomPort, randomString, log} = require './helpers'
 
 VERBOSE = false
 DEFAULT_PROTO = 'tcp'
@@ -20,11 +20,18 @@ module.exports = class Binding extends EventEmitter
         throw new Error("No port specified") if !@port
 
         @socket = zmq.socket 'router'
-        @socket.bindSync @address
+        @tryBinding()
         @socket.on 'message', (client_id, message_json) =>
             @handleMessage client_id.toString(), JSON.parse message_json
 
         log "Socket #{ @id } bound to #{ @address }..."
+
+    tryBinding: (onBound) ->
+        try
+            @socket.bindSync @address
+        catch err
+            log.e err
+            process.exit()
 
     send: (client_id, message) ->
         @socket.send [ client_id, JSON.stringify message ]
