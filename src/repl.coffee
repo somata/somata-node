@@ -1,8 +1,8 @@
-pipeline = require 'pipeline'
+hashpipe = require 'hashpipe'
 somata = require './'
 
 client = new somata.Client
-class SomataPipeline extends pipeline.Pipeline
+class SomataPipeline extends hashpipe.Pipeline
 
 # Overwrite pipeline.get to look up service methods
 SomataPipeline::get = (t, k) ->
@@ -24,7 +24,7 @@ SomataPipeline::get = (t, k) ->
     return found
 
 # Set up a readline prompt
-PipelineREPL = require '../../qnectar/pipeline/repl'
+PipelineREPL = require 'hashpipe/repl'
 
 pipe = new SomataPipeline()
     .use('http')
