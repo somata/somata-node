@@ -14,29 +14,57 @@ CONNECTION_RETRY_MS = 2500
 Client = (@options={}) ->
     @consul_agent = new ConsulAgent
     @subscriptions = {}
+
+    # Deregister when quit
+    process.on 'SIGINT', =>
+        @unsubscribeAll ->
+            process.exit()
+
     return @
 
-# Keep track of existing connections by service name
+# Remote method calls and event handling
+# ==============================================================================
 
-Client::service_connections = {}
+# Calling remote methods
+# --------------------------------------
 
 # Execute a service's remote method
+#
+# TODO: Decide on `call` vs `remote`
 
 Client::call = (service_name, method, args..., cb) ->
     @remote service_name, method, args..., cb
 
 Client::remote = (service_name, method, args..., cb) ->
+    if typeof cb != 'function'
+        args.push cb
+        cb = -> log.w "#{ service_name }:#{ method } completed with no callback."
     @getServiceConnection service_name, (err, service_connection) ->
         if err
             log.e err
         else
-            service_connection.sendMethod method, args..., cb
+            service_connection.sendMethod method, args, cb
 
-Client::on = (service_name, type, cb) ->
-    @subscribe service_name, type, cb
+# Subscriptions
+# --------------------------------------
 
-Client::subscribe = (service_name, type, cb) ->
-    _retry_subscribe = (=> @subscribe service_name, type, cb)
+# Keep track of subscriptions
+
+Client::service_subscriptions = {}
+
+# Subscribe to a service's events
+#
+# TODO: Decide on `on` vs `subscribe`
+
+Client::subscribe = (service_name, type, args..., cb) ->
+    # Make sure the last argument is a function
+    if typeof cb != 'function'
+        log.w "[Client.subscribe] #{ service_name }:#{ type } not a function: " + cb
+        args.push cb
+        cb = -> log.w "#{ service_name }:#{ type } event received with no callback."
+
+    _retry_subscribe = (=> @subscribe service_name, type, args..., cb)
+
     @getServiceConnection service_name, (err, service_connection) =>
 
         if err
@@ -47,14 +75,35 @@ Client::subscribe = (service_name, type, cb) ->
         else
             # If we've got a connection, send a subscription message with it
             service = service_connection.service
-            subscription = service_connection.sendSubscribe type, cb
+            subscription = service_connection.sendSubscribe type, args, cb
+            subscription.connection = service_connection
+            @service_subscriptions[subscription.id] = subscription
 
             # Attempt to resubscribe if the service is deregistered
             @consul_agent.once 'deregister:services/' + service.ID, =>
                 delete service_connection.pending_responses[subscription.id]
                 _retry_subscribe()
 
-# Queries for and connects to a service
+# Client::on is an alias for Client::subscribe
+
+Client::on = (service_name, type, args..., cb) ->
+    @subscribe service_name, type, args..., cb
+
+# Unsubscribe from every connected subscription
+
+Client::unsubscribeAll = (cb) ->
+    for subscription_id, subscription of @service_subscriptions
+        subscription.connection.sendUnsubscribe subscription.id
+    cb()
+
+# Connections and connection managment
+# ==============================================================================
+
+# Keep track of existing connections by service name
+
+Client::service_connections = {}
+
+# Query for and connect to a service
 
 Client::getServiceConnection = (service_name, cb) ->
 
@@ -64,6 +113,7 @@ Client::getServiceConnection = (service_name, cb) ->
 
     else
 
+        # Find all healthy services of this name
         @consul_agent.getHealthyServiceInstances service_name, (err, healthy_instances) =>
 
             if !healthy_instances.length
@@ -92,10 +142,14 @@ Client::saveServiceConnection = (service, service_connection) ->
 
     if KEEPALIVE
         @consul_agent.once 'deregister:services/' + service.ID, =>
+            log.w "Deregistered: #{ service.ID }"
             @killConnection service.Service
 
     else
         setTimeout (=> @killConnection service.Service), CONNECTION_TIMEOUT_MS
+
+# Disconnecting
+# ------------------------------------------------------------------------------
 
 # Check for unhealthy services on an interval and kill connections
 

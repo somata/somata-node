@@ -84,18 +84,25 @@ module.exports = class Connection extends EventEmitter
             @pending_responses[message.id] = on_response
         return message
 
-    sendMethod: (method, args..., cb) ->
+    sendMethod: (method, args, cb) ->
         method_msg =
             kind: 'method'
             method: method
             args: args
         @send method_msg, cb
 
-    sendSubscribe: (type, cb) ->
+    sendSubscribe: (type, args, cb) ->
         subscribe_msg =
             kind: 'subscribe'
             type: type
+            args: args
         @send subscribe_msg, cb
+
+    sendUnsubscribe: (id, cb) ->
+        unsubscribe_msg =
+            kind: 'unsubscribe'
+            id: id
+        @send unsubscribe_msg, cb
 
     close: ->
         @socket.close()

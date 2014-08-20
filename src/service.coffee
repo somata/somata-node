@@ -8,6 +8,7 @@ Binding = require './binding'
 log = helpers.log
 
 VERBOSE = false
+CHECK_INTERVAL = 9000
 
 # Descend down an object tree {one: {two: 3}} with a path 'one.two'
 descend = (o, c) ->
@@ -45,6 +46,7 @@ module.exports = class SomataService extends EventEmitter
         @rpc_binding = new Binding @rpc_options
         @rpc_binding.on 'method', @handleMethod.bind(@)
         @rpc_binding.on 'subscribe', @handleSubscribe.bind(@)
+        @rpc_binding.on 'unsubscribe', @handleUnsubscribe.bind(@)
 
     # Handle a remote method call
     # --------------------------------------------------------------------------
@@ -120,8 +122,16 @@ module.exports = class SomataService extends EventEmitter
         type = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join(':')
+        log.i "Subscribing <#{ subscription_key }>"
         @subscriptions[type] ||= []
         @subscriptions[type].push subscription_key
+
+    handleUnsubscribe: (client_id, message) ->
+        type = message.type
+        subscription_id = message.id
+        subscription_key = [client_id, subscription_id].join(':')
+        log.w "Unsubscribing <#{ subscription_key }>"
+        @subscriptions[type] = _.without @subscriptions[type], subscription_key
 
     publish: (type, event) ->
         if subscriptions = @subscriptions[type]
@@ -176,7 +186,7 @@ module.exports = class SomataService extends EventEmitter
     startChecks: ->
         setInterval (=>
             @consul_agent.checkPass 'service:' + @id
-        ), 9000
+        ), CHECK_INTERVAL
 
     deregister: (cb) ->
         @consul_agent.deregisterService @id, (err, deregistered) =>
