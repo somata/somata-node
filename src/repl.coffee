@@ -13,9 +13,9 @@ SomataPipeline::get = (t, k) ->
     if !found? and t == 'fns'
 
         # Check if the key matches [service]:[method]
-        if service_method = k.match /(\w+):([\w\.]+)/
+        if service_method = k.match /(\w+):([\w\.]*)/
             service = service_method[1]
-            method = service_method[2]
+            method = service_method[2] || service
 
             # Create a pipeline method that invokes the given service
             found = (inp, args, ctx, cb) =>
