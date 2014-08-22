@@ -98,10 +98,11 @@ module.exports = class Connection extends EventEmitter
             args: args
         @send subscribe_msg, cb
 
-    sendUnsubscribe: (id, cb) ->
+    sendUnsubscribe: (id, type, cb) ->
         unsubscribe_msg =
             kind: 'unsubscribe'
             id: id
+            type: type
         @send unsubscribe_msg, cb
 
     close: ->

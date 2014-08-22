@@ -93,7 +93,7 @@ Client::on = (service_name, type, args..., cb) ->
 
 Client::unsubscribeAll = (cb) ->
     for subscription_id, subscription of @service_subscriptions
-        subscription.connection.sendUnsubscribe subscription.id
+        subscription.connection.sendUnsubscribe subscription.id, subscription.type
     cb()
 
 # Connections and connection managment

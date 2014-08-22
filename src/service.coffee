@@ -116,27 +116,33 @@ module.exports = class SomataService extends EventEmitter
     #
     # TODO
 
-    subscriptions: {}
+    subscriptions_by_type: {}
+    subscriptions_by_client: {}
 
     handleSubscribe: (client_id, message) ->
         type = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join(':')
         log.i "Subscribing <#{ subscription_key }>"
-        @subscriptions[type] ||= []
-        @subscriptions[type].push subscription_key
+        @subscriptions_by_type[type] ||= []
+        @subscriptions_by_type[type].push subscription_key
+        @subscriptions_by_client[client_id] ||= []
+        @subscriptions_by_client[client_id].push subscription_key
 
     handleUnsubscribe: (client_id, message) ->
         type = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join(':')
         log.w "Unsubscribing <#{ subscription_key }>"
-        @subscriptions[type] = _.without @subscriptions[type], subscription_key
+        for type, subscription_keys of @subscriptions_by_type
+            @subscriptions_by_type[type] = _.without subscription_keys, subscription_key
+        @subscriptions_by_client[client_id] = _.without @subscriptions_by_client[client_id], subscription_key
 
     publish: (type, event) ->
-        if subscriptions = @subscriptions[type]
-            subscriptions.forEach (subscription_key) =>
-                [client_id, subscription_id] = subscription_key.split(':')
+        if subscription_keys = @subscriptions_by_type[type]
+            subscription_keys.forEach (subscription_key) =>
+                [client_id, subscription_id] = subscription_key.split ':'
+                log.d "Sending <#{ subscription_key }>"
                 @rpc_binding.send client_id,
                     id: subscription_id
                     kind: 'event'
