@@ -11,6 +11,10 @@ CONNECTION_TIMEOUT_MS = 6500
 CONNECTION_LINGER_MS = 1500
 CONNECTION_RETRY_MS = 2500
 
+PREFIX = ''
+if process.env.SOMATA_PREFIX?
+    PREFIX = process.env.SOMATA_PREFIX + ':'
+
 Client = (@options={}) ->
     @consul_agent = new ConsulAgent
     @subscriptions = {}
@@ -106,6 +110,7 @@ Client::service_connections = {}
 # Query for and connect to a service
 
 Client::getServiceConnection = (service_name, cb) ->
+    service_name = PREFIX + service_name
 
     if service_connection = @service_connections[service_name]
         # Use an existing connection
@@ -165,7 +170,10 @@ Client::killConnection = (service_name) ->
     log.w '[killConnection] ' + service_name if VERBOSE
     if connection = @service_connections[service_name]
         delete @service_connections[service_name]
-        setTimeout (-> connection.close()), CONNECTION_LINGER_MS
+        doClose = ->
+            log.e "Closing socket..."
+            connection.close()
+        setTimeout doClose, CONNECTION_LINGER_MS
 
 module.exports = Client
 

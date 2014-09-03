@@ -106,6 +106,7 @@ module.exports = class Connection extends EventEmitter
         @send unsubscribe_msg, cb
 
     close: ->
+        log.w "Closing socket: #{ util.inspect @socket }"
         @socket.close()
 
 # Class methods

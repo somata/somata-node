@@ -5,7 +5,7 @@ util = require 'util'
 
 VERBOSE = false
 DEFAULT_PROTO = 'tcp'
-DEFAULT_BIND = '0.0.0.0'
+DEFAULT_BIND = process.env.SOMATA_BIND || '0.0.0.0'
 
 module.exports = class Binding extends EventEmitter
 

@@ -6,7 +6,7 @@ util = require 'util'
 _ = require 'underscore'
 
 VERBOSE = false
-DEFAULT_BASE_URL = 'http://localhost:8500/v1'
+CONSUL_URL = process.env.SOMATA_CONSUL_URL || 'http://localhost:8500/v1'
 HEALTH_POLL_MS = 2000
 
 module.exports = class ConsulAgent extends EventEmitter
@@ -16,7 +16,7 @@ module.exports = class ConsulAgent extends EventEmitter
         return @
 
 ConsulAgent::setDefaults = ->
-    @options.base_url ||= DEFAULT_BASE_URL
+    @options.base_url ||= CONSUL_URL
     @known_instances = {}
 
 # Generalized request to the Consul HTTP API

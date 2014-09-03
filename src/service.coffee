@@ -7,8 +7,12 @@ ConsulAgent = require './consul-agent'
 Binding = require './binding'
 log = helpers.log
 
-VERBOSE = false
+VERBOSE = process.env.SOMATA_VERBOSE || false
 CHECK_INTERVAL = 9000
+
+PREFIX = ''
+if process.env.SOMATA_PREFIX?
+    PREFIX = process.env.SOMATA_PREFIX + ':'
 
 # Descend down an object tree {one: {two: 3}} with a path 'one.two'
 descend = (o, c) ->
@@ -23,6 +27,7 @@ module.exports = class SomataService extends EventEmitter
     # --------------------------------------------------------------------------
 
     constructor: (@name, @methods={}, options={}) ->
+        @name = PREFIX + @name
         @id = @name + '~' + helpers.randomString()
 
         # Determine options
