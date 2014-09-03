@@ -41,7 +41,7 @@ Client::call = (service_name, method, args..., cb) ->
 
 Client::remote = (service_name, method, args..., cb) ->
     if typeof cb != 'function'
-        args.push cb
+        args.push cb if cb?
         cb = -> log.w "#{ service_name }:#{ method } completed with no callback."
     @getServiceConnection service_name, (err, service_connection) ->
         if err
