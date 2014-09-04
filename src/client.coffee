@@ -42,7 +42,9 @@ Client::call = (service_name, method, args..., cb) ->
 Client::remote = (service_name, method, args..., cb) ->
     if typeof cb != 'function'
         args.push cb if cb?
-        cb = -> log.w "#{ service_name }:#{ method } completed with no callback."
+        if VERBOSE
+            cb = -> log.w "#{ service_name }:#{ method } completed with no callback."
+        else cb = null
     @getServiceConnection service_name, (err, service_connection) ->
         if err
             log.e err
@@ -171,7 +173,7 @@ Client::killConnection = (service_name) ->
     if connection = @service_connections[service_name]
         delete @service_connections[service_name]
         doClose = ->
-            log.e "Closing socket..."
+            log.w "Closing connection to #{ service_name }..."
             connection.close()
         setTimeout doClose, CONNECTION_LINGER_MS
 
