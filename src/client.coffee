@@ -6,7 +6,7 @@ Connection = require './connection'
 log = helpers.log
 
 VERBOSE = process.env.SOMATA_VERBOSE || false
-KEEPALIVE = process.env.SOMATA_KEEPALIVE || false
+KEEPALIVE = process.env.SOMATA_KEEPALIVE || true
 CONNECTION_TIMEOUT_MS = 6500
 CONNECTION_LINGER_MS = 1500
 CONNECTION_RETRY_MS = 2500
