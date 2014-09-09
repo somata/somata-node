@@ -144,14 +144,26 @@ module.exports = class SomataService extends EventEmitter
         @subscriptions_by_client[client_id] = _.without @subscriptions_by_client[client_id], subscription_key
 
     publish: (type, event) ->
-        if subscription_keys = @subscriptions_by_type[type]
-            subscription_keys.forEach (subscription_key) =>
-                [client_id, subscription_id] = subscription_key.split ':'
-                log.d "Sending <#{ subscription_key }>"
-                @rpc_binding.send client_id,
-                    id: subscription_id
-                    kind: 'event'
-                    event: event
+        _.map @subscriptions_by_type[type], (subscription_key) =>
+            [client_id, subscription_id] = subscription_key.split ':'
+            @sendEvent client_id, subscription_id, event
+
+    sendEvent: (client_id, subscription_id, event) ->
+        @rpc_binding.send client_id,
+            id: subscription_id
+            kind: 'event'
+            event: event
+
+    end: (type) ->
+        _.map @subscriptions_by_type[type], (subscription_key) =>
+            [client_id, subscription_id] = subscription_key.split ':'
+            @sendEnd client_id, subscription_id
+        delete @subscriptions_by_type[type]
+
+    sendEnd: (client_id, subscription_id) ->
+        @rpc_binding.send client_id,
+            id: subscription_id
+            kind: 'end'
 
     # Handle a status request
     # --------------------------------------------------------------------------

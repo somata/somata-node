@@ -69,6 +69,9 @@ module.exports = class Connection extends EventEmitter
                 delete @pending_responses[message.id]
             else if message.kind == 'event'
                 on_response(null, message.event)
+            else if message.kind == 'end'
+                on_response(null, null, true)
+                delete @pending_responses[message.id]
 
     # Send a message to the connected-to service
     # --------------------------------------------------------------------------
