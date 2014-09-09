@@ -63,20 +63,23 @@ Client::service_subscriptions = {}
 # TODO: Decide on `on` vs `subscribe`
 
 Client::subscribe = (service_name, type, args..., cb) ->
+
     # Make sure the last argument is a function
     if typeof cb != 'function'
         log.w "[Client.subscribe] #{ service_name }:#{ type } not a function: " + cb
         args.push cb
         cb = -> log.w "#{ service_name }:#{ type } event received with no callback."
 
-    _retry_subscribe = (=> @subscribe service_name, type, args..., cb)
+    # In case the subsctiption fails or drops
+    _retrySubscribe = (=> @subscribe service_name, type, args..., cb)
 
+    # Look for the service
     @getServiceConnection service_name, (err, service_connection) =>
 
         if err
             # Attempt to retry subscription if the service was not found
             log.e err + "... retrying in #{ CONNECTION_RETRY_MS/1000 }s"
-            setTimeout _retry_subscribe, CONNECTION_RETRY_MS
+            setTimeout _retrySubscribe, CONNECTION_RETRY_MS
 
         else
             # If we've got a connection, send a subscription message with it
@@ -88,7 +91,7 @@ Client::subscribe = (service_name, type, args..., cb) ->
             # Attempt to resubscribe if the service is deregistered
             @consul_agent.once 'deregister:services/' + service.ID, =>
                 delete service_connection.pending_responses[subscription.id]
-                _retry_subscribe()
+                _retrySubscribe()
 
 # Client::on is an alias for Client::subscribe
 
@@ -101,6 +104,11 @@ Client::unsubscribeAll = (cb) ->
     for subscription_id, subscription of @service_subscriptions
         subscription.connection.sendUnsubscribe subscription.id, subscription.type
     cb()
+
+# Helper for binding specific services
+
+Client::bindRemote = (service_name) ->
+    @remote.bind @, service_name
 
 # Connections and connection managment
 # ==============================================================================
