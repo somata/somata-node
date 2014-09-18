@@ -101,12 +101,13 @@ module.exports = class Connection extends EventEmitter
             args: args
         @send subscribe_msg, cb
 
-    sendUnsubscribe: (id, type, cb) ->
+    sendUnsubscribe: (id, type) ->
         unsubscribe_msg =
             kind: 'unsubscribe'
             id: id
             type: type
-        @send unsubscribe_msg, cb
+        @send unsubscribe_msg
+        delete @pending_responses[id]
 
     close: -> @socket.close()
 

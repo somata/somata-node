@@ -21,8 +21,8 @@ Client = (@options={}) ->
 
     # Deregister when quit
     process.on 'SIGINT', =>
-        @unsubscribeAll ->
-            process.exit()
+        @unsubscribeAll()
+        process.exit()
 
     return @
 
@@ -85,13 +85,16 @@ Client::subscribe = (service_name, type, args..., cb) ->
             # If we've got a connection, send a subscription message with it
             service = service_connection.service
             subscription = service_connection.sendSubscribe type, args, cb
+            subscription.service = service_name
             subscription.connection = service_connection
             @service_subscriptions[subscription.id] = subscription
 
             # Attempt to resubscribe if the service is deregistered
             @consul_agent.once 'deregister:services/' + service.ID, =>
-                delete service_connection.pending_responses[subscription.id]
-                _retrySubscribe()
+                # Only retry if the subsctiption has not already been ended
+                if service_connection.pending_responses[subscription.id]?
+                    delete service_connection.pending_responses[subscription.id]
+                    _retrySubscribe()
 
 # Client::on is an alias for Client::subscribe
 
@@ -100,10 +103,16 @@ Client::on = (service_name, type, args..., cb) ->
 
 # Unsubscribe from every connected subscription
 
-Client::unsubscribeAll = (cb) ->
-    for subscription_id, subscription of @service_subscriptions
-        subscription.connection.sendUnsubscribe subscription.id, subscription.type
-    cb()
+Client::unsubscribe = (_sub) ->
+    _.chain(@service_subscriptions).pairs()
+        .where(_sub)
+        .map ([sub_id, sub], _cb) =>
+            sub.connection.sendUnsubscribe sub_id, sub.type
+            delete @service_subscriptions[sub_id]
+
+Client::unsubscribeAll = ->
+    _.pairs(@service_subscriptions).map ([sub_id, sub], _cb) ->
+        sub.connection.sendUnsubscribe sub_id, sub.type
 
 # Helper for binding specific services
 

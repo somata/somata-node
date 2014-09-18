@@ -96,6 +96,7 @@ module.exports = class SomataService extends EventEmitter
                     err.slice(11) == 'undefined is not a function'
                         err = "ArityError? method `#{ method_name }` takes #{ _method.length-1 } arguments."
                 log.e '[ERROR] ' + err
+                console.log e.stack
                 _sendError err
 
         # Method not found for this service
@@ -139,6 +140,7 @@ module.exports = class SomataService extends EventEmitter
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join(':')
         log.w "Unsubscribing <#{ subscription_key }>"
+        # TODO: Improve how subscriptions are stored
         for type, subscription_keys of @subscriptions_by_type
             @subscriptions_by_type[type] = _.without subscription_keys, subscription_key
         @subscriptions_by_client[client_id] = _.without @subscriptions_by_client[client_id], subscription_key
