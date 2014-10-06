@@ -13,9 +13,10 @@ module.exports = class Binding extends EventEmitter
         @id = @id || randomString()
 
         @proto = options.proto || DEFAULT_PROTO
-        @host = DEFAULT_BIND
+        @bind = DEFAULT_BIND
+        @host = options.host
         @port = options.port
-        @address = @proto + '://' + @host + ':' + @port
+        @address = @proto + '://' + @bind + ':' + @port
 
         throw new Error("No port specified") if !@port
 

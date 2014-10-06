@@ -7,7 +7,7 @@ _ = require 'underscore'
 
 VERBOSE = false
 CONSUL_URL = process.env.SOMATA_CONSUL_URL || 'http://localhost:8500/v1'
-HEALTH_POLL_MS = 2000
+HEALTH_POLL_MS = parseInt(process.env.SOMATA_HEALTH_POLL) || 2000
 
 module.exports = class ConsulAgent extends EventEmitter
     constructor: (@options={}) ->
@@ -50,8 +50,11 @@ ConsulAgent::getServices = (cb) ->
 ConsulAgent::getServiceNodes = (service_id, cb) ->
     @apiRequest 'GET', '/catalog/service/' + service_id, cb
 
+ConsulAgent::registerExternalService = (service, cb) ->
+    @apiRequest 'POST', '/catalog/register', service, cb
+
 ConsulAgent::deregisterExternalService = (service, cb) ->
-    @apiRequest 'PUT', '/catalog/deregister/' + service_id, service, cb
+    @apiRequest 'PUT', '/catalog/deregister', service, cb
 
 # Health
 
