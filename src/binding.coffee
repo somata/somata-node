@@ -15,24 +15,40 @@ module.exports = class Binding extends EventEmitter
         @proto = options.proto || DEFAULT_PROTO
         @bind = DEFAULT_BIND
         @host = options.host
-        @port = options.port
-        @address = @proto + '://' + @bind + ':' + @port
+        @port = options.port || randomPort()
 
-        throw new Error("No port specified") if !@port
-
-        @socket = zmq.socket 'router'
         @tryBinding()
+
+    didBind: ->
+        # Announce binding
+        log "Socket #{ @id } bound to #{ @address }..."
+        process.nextTick => @emit 'bind'
+
+        # Start handling messages
         @socket.on 'message', (client_id, message_json) =>
             @handleMessage client_id.toString(), JSON.parse message_json
 
-        log "Socket #{ @id } bound to #{ @address }..."
+    makeAddress: ->
+        @address = @proto + '://' + @bind + ':' + @port
 
-    tryBinding: (onBound) ->
+    tryBinding: (n_retried=0) ->
         try
+            @makeAddress()
+            log.i "[tryBinding] Attempting to bind on #{ @address }..."
+            @socket = zmq.socket 'router'
             @socket.bindSync @address
+            @didBind()
         catch err
             log.e err
-            process.exit()
+            if n_retried < 5
+                log.w "[tryBinding] Retrying..."
+                @port = randomPort()
+                setTimeout =>
+                    @tryBinding(n_retried+1)
+                , 1000
+            else
+                log.e "[tryBinding] Retried too many times."
+                process.exit()
 
     send: (client_id, message) ->
         @socket.send [ client_id, JSON.stringify message ]
