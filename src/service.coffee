@@ -42,8 +42,7 @@ module.exports = class SomataService extends EventEmitter
         @consul_agent = new ConsulAgent
 
         # Bind and register the service
-        @checkBindingPort =>
-            @bindRPC()
+        @bindRPC =>
             @register()
 
         # Deregister when quit
@@ -51,8 +50,9 @@ module.exports = class SomataService extends EventEmitter
             @deregister ->
                 process.exit()
 
-    bindRPC: ->
+    bindRPC: (cb) ->
         @rpc_binding = new Binding @rpc_options
+        @rpc_binding.on 'bind', cb
         @rpc_binding.on 'method', @handleMethod.bind(@)
         @rpc_binding.on 'subscribe', @handleSubscribe.bind(@)
         @rpc_binding.on 'unsubscribe', @handleUnsubscribe.bind(@)
@@ -204,7 +204,6 @@ module.exports = class SomataService extends EventEmitter
             # Start the TTL check
             @startChecks() if CHECK_INTERVAL > 0
             log.s "Registered service `#{ @name }` on :#{ @rpc_binding.port }"
-            console.log util.inspect service_description
             cb(null, registered) if cb?
 
     registerExternally: (cb) ->
