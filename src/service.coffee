@@ -195,7 +195,7 @@ module.exports = class SomataService extends EventEmitter
             Port: @rpc_binding.port
             Tags: ["proto:#{@rpc_binding.proto}"]
         if CHECK_INTERVAL > 0
-            Check:
+            service_description.Check =
                 Interval: CHECK_INTERVAL
                 TTL: "10s"
 
@@ -203,7 +203,8 @@ module.exports = class SomataService extends EventEmitter
         @consul_agent.registerService service_description, (err, registered) =>
             # Start the TTL check
             @startChecks() if CHECK_INTERVAL > 0
-            log.s "Registered `#{ @name }` on :#{ @rpc_binding.port }"
+            log.s "Registered service `#{ @name }` on :#{ @rpc_binding.port }"
+            console.log util.inspect service_description
             cb(null, registered) if cb?
 
     registerExternally: (cb) ->
@@ -215,7 +216,7 @@ module.exports = class SomataService extends EventEmitter
                 Port: @rpc_binding.port
                 Tags: ["proto:#{@rpc_binding.proto}"]
         @consul_agent.registerExternalService service_description, (err, registered) =>
-            log.s "Registered `#{ @name }` on #{ @rpc_binding.host }:#{ @rpc_binding.port }"
+            log.s "Registered external service `#{ @name }` on #{ @rpc_binding.host }:#{ @rpc_binding.port }"
             cb(null, registered) if cb?
 
     # Check for existing unhealthy instance ports to connect as
