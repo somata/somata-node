@@ -3,7 +3,7 @@ util = require 'util'
 {EventEmitter} = require 'events'
 {randomPort, randomString, log} = require './helpers'
 
-VERBOSE = false
+VERBOSE = process.env.SOMATA_VERBOSE || false
 DEFAULT_PROTO = 'tcp'
 DEFAULT_BIND = process.env.SOMATA_BIND || '0.0.0.0'
 

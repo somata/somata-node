@@ -4,7 +4,7 @@ _ = require 'underscore'
 {EventEmitter} = require 'events'
 {log, randomString} = require './helpers'
 
-VERBOSE = false
+VERBOSE = process.env.SOMATA_VERBOSE || false
 DEFAULT_PROTO = 'tcp'
 DEFAULT_CONNECT = 'localhost'
 
