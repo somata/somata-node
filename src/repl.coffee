@@ -29,6 +29,7 @@ PipelineREPL = require 'hashpipe/repl'
 pipe = new SomataPipeline()
     .use('http')
     .use('encodings')
+    .use(require('hashpipe/modules/redis').connect())
     .use(
         'members': (inp, args, ctx, cb) ->
             client.consul_agent.getNodes cb
