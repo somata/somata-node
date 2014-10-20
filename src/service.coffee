@@ -207,7 +207,7 @@ module.exports = class SomataService extends EventEmitter
         @consul_agent.registerService service_description, (err, registered) =>
             # Start the TTL check
             @startChecks() if CHECK_INTERVAL > 0
-            log.s "Registered service `#{ @name }` on :#{ @rpc_binding.port }"
+            log.s "Registered service `#{ @id }` on :#{ @rpc_binding.port }"
             cb(null, registered) if cb?
 
     registerExternally: (cb) ->
@@ -219,7 +219,7 @@ module.exports = class SomataService extends EventEmitter
                 Port: @rpc_binding.port
                 Tags: ["proto:#{@rpc_binding.proto}"]
         @consul_agent.registerExternalService service_description, (err, registered) =>
-            log.s "Registered external service `#{ @name }` on #{ @rpc_binding.host }:#{ @rpc_binding.port }"
+            log.s "Registered external service `#{ @id }` on #{ @rpc_binding.host }:#{ @rpc_binding.port }"
             cb(null, registered) if cb?
 
     # Check for existing unhealthy instance ports to connect as
@@ -240,7 +240,7 @@ module.exports = class SomataService extends EventEmitter
         return @deregisterExternally(cb) if EXTERNAL
 
         @consul_agent.deregisterService @id, (err, deregistered) =>
-            log.e "[deregister] Deregistered `#{ @name }` from :#{ @rpc_binding.port }"
+            log.e "[deregister] Deregistered `#{ @id }` from :#{ @rpc_binding.port }"
             cb(null, deregistered) if cb?
 
     deregisterExternally: (cb) ->
@@ -249,6 +249,6 @@ module.exports = class SomataService extends EventEmitter
             ServiceID: @name
 
         @consul_agent.deregisterExternalService service_description, (err, deregistered) =>
-            log.e "[deregisterExternally] Deregistered `#{ @name }` from #{ @rpc_binding.host }:#{ @rpc_binding.port }"
+            log.e "[deregisterExternally] Deregistered `#{ @id }` from #{ @rpc_binding.host }:#{ @rpc_binding.port }"
             cb(null, deregistered) if cb?
 

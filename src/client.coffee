@@ -140,7 +140,7 @@ Client::getServiceConnection = (service_name, cb) ->
     else
 
         # Find all healthy services of this name
-        @consul_agent.getHealthyServiceInstances service_name, (err, healthy_instances) =>
+        @consul_agent.checkServiceHealth service_name, 0, (err, healthy_instances) =>
 
             if !healthy_instances.length
                 return cb "Could not find service `#{ service_name }`", null
@@ -165,6 +165,7 @@ Client::connectToService = (instance) ->
 Client::saveServiceConnection = (service, service_connection) ->
     service_connection.service = service
     @service_connections[service.Service] = service_connection
+    @consul_agent.known_services.push service.Service
 
     if KEEPALIVE
         @consul_agent.once 'deregister:services/' + service.ID, =>

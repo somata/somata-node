@@ -12,12 +12,19 @@ HEALTH_POLL_MS = parseInt(process.env.SOMATA_HEALTH_POLL) || 2000
 module.exports = class ConsulAgent extends EventEmitter
     constructor: (@options={}) ->
         @setDefaults()
-        @startUpdatingInstances()
+        @startWatchingKnownServices()
         return @
 
 ConsulAgent::setDefaults = ->
     @options.base_url ||= CONSUL_URL
+    @known_services = []
     @known_instances = {}
+
+# Helpers for blocking queries
+
+last_index = 0
+WATCH_S  = 60
+makeWatchQuery = (index) -> "?wait=#{ WATCH_S }s&index=#{ index }"
 
 # Generalized request to the Consul HTTP API
 
@@ -34,6 +41,7 @@ ConsulAgent::apiRequest = (method, path, data, cb) ->
 
     request request_options, (err, res, data) ->
         log.d '[apiRequest] Response status: ' + res.statusCode if VERBOSE
+        last_index = res.headers['x-consul-index']
         cb(err, data) if cb?
 
 # Core API requests
@@ -60,6 +68,9 @@ ConsulAgent::deregisterExternalService = (service, cb) ->
 
 ConsulAgent::getServiceHealth = (service_id, cb) ->
     @apiRequest 'GET', '/health/service/' + service_id, cb
+
+ConsulAgent::watchServiceHealth = (service_id, index=last_index, cb) ->
+    @apiRequest 'GET', '/health/service/' + service_id + makeWatchQuery(index), cb
 
 # Agent
 
@@ -125,26 +136,34 @@ ConsulAgent::getUnhealthyServiceInstances = (service_name, cb) ->
 
 # Emulate upcoming agent events by polling for changes to registered instances
 
-ConsulAgent::updateInstances = (startup=false) ->
+ConsulAgent::startWatchingKnownServices = ->
+    again = => @startWatchingKnownServices()
+    if @known_services.length
+        async.map @known_services, (service_name, _cb) =>
+            @checkServiceHealth(service_name, null, _cb)
+        , again
+    else
+        setTimeout again, 250
 
-    # Get healthy instances of all services
-    @getAllServicesHealth (err, all_service_instances) =>
-        healthy_instances = _.indexBy (healthyInstances _.flatten _.values all_service_instances), (ins) -> ins.Service.ID
-        healthy_ids = _.map healthy_instances, (ins) -> ins.Service.ID
-        known_ids = _.map @known_instances, (ins) -> ins.Service.ID
+ConsulAgent::checkServiceHealth = (service_name, index=null, cb) ->
+    index = last_index if index == null
+    @watchServiceHealth service_name, index, (err, service_instances) =>
+        getServiceID = (ins) -> ins.Service.ID
+        healthy_instances = healthyInstances service_instances
+        healthy_ids = healthy_instances.map getServiceID
+        known_ids = (@known_instances[service_name]?.map getServiceID) || []
 
         # Check if we are adding or removing each ID
         new_ids = healthy_ids.filter (i) -> i not in known_ids
         dead_ids = known_ids.filter (i) -> i not in healthy_ids
 
-        if !startup
-            # Emit events
-            new_ids.map (i) => @emit 'register:services/' + i, healthy_instances[i]
-            dead_ids.map (i) => @emit 'deregister:services/' + i
+        # Emit register and deregister events when a service ID becomes known or disappears
+        new_ids.map (service_id) =>
+            service_instance = healthy_instances[service_id]
+            @emit 'register:services/' + service_name, service_instance
+        dead_ids.map (service_id) =>
+            @emit 'deregister:services/' + service_id
 
-        @known_instances = healthy_instances
-
-ConsulAgent::startUpdatingInstances = ->
-    @updateInstances(true)
-    setInterval @updateInstances.bind(@), HEALTH_POLL_MS
+        @known_instances[service_name] = healthy_instances
+        cb(null, healthy_instances) if cb?
 
