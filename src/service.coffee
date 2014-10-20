@@ -60,6 +60,22 @@ module.exports = class SomataService extends EventEmitter
     # Handle a remote method call
     # --------------------------------------------------------------------------
 
+    # Helpers for sending response messages
+
+    sendResponse: (client_id, message_id, response) ->
+        @rpc_binding.send client_id,
+            id: message_id
+            kind: 'response'
+            response: response
+
+    sendError: (client_id, message_id, error) ->
+        @rpc_binding.send client_id,
+            id: message_id
+            kind: 'error'
+            error: error
+
+    # Interpreting a method call
+
     handleMethod: (client_id, message) ->
         log "<#{ client_id }>: #{ util.inspect message, depth: null }" if VERBOSE
 
@@ -67,32 +83,18 @@ module.exports = class SomataService extends EventEmitter
         method_name = message.method
         if _method = @getMethod method_name
 
-            # Define our response methods
-
-            _sendResponse = (response) =>
-                @rpc_binding.send client_id,
-                    id: message.id
-                    kind: 'response'
-                    response: response
-
-            _sendError = (error) =>
-                @rpc_binding.send client_id,
-                    id: message.id
-                    kind: 'error'
-                    error: error
-
             # Execute the method with the arguments
             log 'Executing ' + method_name if VERBOSE
             try
 
                 _method message.args..., (err, response) =>
                     if err
-                        _sendError err
+                        @sendError client_id, message.id, err
                     else
-                        _sendResponse response
+                        @sendResponse client_id, message.id, response
 
+            # Catch unhandled errors
             catch e
-                # Catch unhandled errors
                 err = e.toString()
                 arity_mismatch = (message.args.length != _method.length - 1)
                 if arity_mismatch &&
@@ -101,12 +103,14 @@ module.exports = class SomataService extends EventEmitter
                         err = "ArityError? method `#{ method_name }` takes #{ _method.length-1 } arguments."
                 log.e '[ERROR] ' + err
                 console.log e.stack
-                _sendError err
+                @sendError client_id, message.id, err
 
         # Method not found for this service
         else
             # TODO: Send a failure message to client
             log.i 'No method ' + message.method
+
+    # Finding a method from the methods hash
 
     getMethod: (method_name) ->
         # Look for builtins, having method names starting with a `_`
