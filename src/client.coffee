@@ -15,14 +15,16 @@ PREFIX = ''
 if process.env.SOMATA_PREFIX?
     PREFIX = process.env.SOMATA_PREFIX + ':'
 
-Client = (@options={}) ->
+Client = (options={}) ->
+    _.extend @, options
     @consul_agent = new ConsulAgent
     @subscriptions = {}
 
     # Deregister when quit
     process.on 'SIGINT', =>
         @unsubscribeAll()
-        process.exit()
+        if !@parent?
+            process.exit()
 
     return @
 

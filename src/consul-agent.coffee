@@ -5,7 +5,7 @@ util = require 'util'
 {EventEmitter} = require 'events'
 _ = require 'underscore'
 
-VERBOSE = false
+VERBOSE = process.env.SOMATA_VERBOSE || false
 CONSUL_URL = process.env.SOMATA_CONSUL_URL || 'http://localhost:8500/v1'
 HEALTH_POLL_MS = parseInt(process.env.SOMATA_HEALTH_POLL) || 2000
 

@@ -33,8 +33,9 @@ module.exports = class SomataService extends EventEmitter
         @id = @name + '~' + helpers.randomString()
 
         # Determine options
-        @rpc_options = options.rpc_options || {}
-        @pub_options = options.pub_options || {}
+        _.extend @, options
+        @rpc_options ||= {}
+        @pub_options ||= {}
 
         @rpc_options.host = SERVICE_HOST
 
@@ -47,8 +48,7 @@ module.exports = class SomataService extends EventEmitter
 
         # Deregister when quit
         process.on 'SIGINT', =>
-            @deregister ->
-                process.exit()
+            @deregister -> process.exit()
 
     bindRPC: (cb) ->
         @rpc_binding = new Binding @rpc_options
@@ -187,7 +187,7 @@ module.exports = class SomataService extends EventEmitter
     # TODO: Abstract so that some registry service besides Consul may be used
 
     register: (cb) ->
-        return @registerExternally() if EXTERNAL
+        return @registerExternally(cb) if EXTERNAL
 
         service_description =
             Name: @name
@@ -233,17 +233,18 @@ module.exports = class SomataService extends EventEmitter
         ), CHECK_INTERVAL
 
     deregister: (cb) ->
-        return @deregisterExternally() if EXTERNAL
+        return @deregisterExternally(cb) if EXTERNAL
 
         @consul_agent.deregisterService @id, (err, deregistered) =>
-            log.e "Deregistered `#{ @name }` from :#{ @rpc_binding.port }"
+            log.e "[deregister] Deregistered `#{ @name }` from :#{ @rpc_binding.port }"
             cb(null, deregistered) if cb?
 
     deregisterExternally: (cb) ->
         service_description =
             Node: @name
             ServiceID: @name
+
         @consul_agent.deregisterExternalService service_description, (err, deregistered) =>
-            log.e "Deregistered `#{ @name }` from #{ @rpc_binding.host }:#{ @rpc_binding.port }"
+            log.e "[deregisterExternally] Deregistered `#{ @name }` from #{ @rpc_binding.host }:#{ @rpc_binding.port }"
             cb(null, deregistered) if cb?
 
