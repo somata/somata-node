@@ -137,7 +137,7 @@ ConsulAgent::getUnhealthyServiceInstances = (service_name, cb) ->
 # Emulate upcoming agent events by polling for changes to registered instances
 
 ConsulAgent::startWatchingKnownServices = ->
-    again = => @startWatchingKnownServices()
+    again = @startWatchingKnownServices.bind(@)
     if @known_services.length
         async.map @known_services, (service_name, _cb) =>
             @checkServiceHealth(service_name, null, _cb)

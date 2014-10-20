@@ -21,7 +21,7 @@ module.exports = class Binding extends EventEmitter
 
     didBind: ->
         # Announce binding
-        log "Socket #{ @id } bound to #{ @address }..."
+        log.i "[didBind] Socket #{ @id } bound to #{ @address }..."
         process.nextTick => @emit 'bind'
 
         # Start handling messages
@@ -34,7 +34,7 @@ module.exports = class Binding extends EventEmitter
     tryBinding: (n_retried=0) ->
         try
             @makeAddress()
-            log.i "[tryBinding] Attempting to bind on #{ @address }..."
+            log.d "[tryBinding] Attempting to bind on #{ @address }..." if VERBOSE
             @socket = zmq.socket 'router'
             @socket.bindSync @address
             @didBind()
