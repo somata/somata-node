@@ -21,7 +21,12 @@ class Client
         _.extend @, options
         @consul_agent = new ConsulAgent
         @connection_manager = new EventEmitter
-        @subscriptions = {}
+
+        # Keep track of subscriptions
+        @service_subscriptions = {}
+
+        # Keep track of existing connections by service name
+        @service_connections = {}
 
         # Deregister when quit
         process.on 'SIGINT', =>
@@ -58,10 +63,6 @@ Client::remote = (service_name, method, args..., cb) ->
 
 # Subscriptions
 # --------------------------------------
-
-# Keep track of subscriptions
-
-Client::service_subscriptions = {}
 
 # Subscribe to a service's events
 #
@@ -126,10 +127,6 @@ Client::bindRemote = (service_name) ->
 
 # Connections and connection managment
 # ==============================================================================
-
-# Keep track of existing connections by service name
-
-Client::service_connections = {}
 
 # Query for and connect to a service
 
