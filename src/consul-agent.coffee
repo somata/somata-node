@@ -10,13 +10,14 @@ CONSUL_URL = process.env.SOMATA_CONSUL_URL || 'http://localhost:8500/v1'
 HEALTH_POLL_MS = parseInt(process.env.SOMATA_HEALTH_POLL) || 2000
 
 module.exports = class ConsulAgent extends EventEmitter
-    constructor: (@options={}) ->
+    constructor: (options={}) ->
+        _.extend @, options
         @setDefaults()
         @startWatchingKnownServices()
         return @
 
 ConsulAgent::setDefaults = ->
-    @options.base_url ||= CONSUL_URL
+    @base_url ||= CONSUL_URL
     @known_services = []
     @known_instances = {}
 
@@ -34,7 +35,7 @@ ConsulAgent::apiRequest = (method, path, data, cb) ->
         data = null
 
     request_options =
-        url: @options.base_url + path
+        url: @base_url + path
         method: method
         json: true
         body: data

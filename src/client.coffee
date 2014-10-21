@@ -1,6 +1,7 @@
 util = require 'util'
 helpers = require './helpers'
 _ = require 'underscore'
+{EventEmitter} = require 'events'
 ConsulAgent = require './consul-agent'
 Connection = require './connection'
 log = helpers.log
@@ -15,18 +16,20 @@ PREFIX = ''
 if process.env.SOMATA_PREFIX?
     PREFIX = process.env.SOMATA_PREFIX + ':'
 
-Client = (options={}) ->
-    _.extend @, options
-    @consul_agent = new ConsulAgent
-    @subscriptions = {}
+class Client
+    constructor: (options={}) ->
+        _.extend @, options
+        @consul_agent = new ConsulAgent
+        @connection_manager = new EventEmitter
+        @subscriptions = {}
 
-    # Deregister when quit
-    process.on 'SIGINT', =>
-        @unsubscribeAll()
-        if !@parent?
-            process.exit()
+        # Deregister when quit
+        process.on 'SIGINT', =>
+            @unsubscribeAll()
+            if !@parent?
+                process.exit()
 
-    return @
+        return @
 
 # Remote method calls and event handling
 # ==============================================================================
@@ -134,10 +137,20 @@ Client::getServiceConnection = (service_name, cb) ->
     service_name = PREFIX + service_name
 
     if service_connection = @service_connections[service_name]
-        # Use an existing connection
-        cb null, service_connection
+
+        # Use the existing connected connection
+        if service_connection.connected
+            cb null, service_connection
+
+        # Or wait for it to connect
+        else
+            console.log 'waiting for connection...'
+            @connection_manager.once 'connected:' + service_name, (service_connection) ->
+                console.log 'got connection'
+                cb null, service_connection
 
     else
+        @service_connections[service_name] = connected: false
 
         # Find all healthy services of this name
         @consul_agent.checkServiceHealth service_name, 0, (err, healthy_instances) =>
@@ -148,10 +161,14 @@ Client::getServiceConnection = (service_name, cb) ->
             # Choose one of the available instances and connect
             instance = helpers.randomChoice healthy_instances
             service_connection = @connectToService instance
+            service_connection.connected = true
 
             # Save for later use
             @saveServiceConnection instance.Service, service_connection
             cb null, service_connection
+
+            # Let other connections know this is connected
+            @connection_manager.emit 'connected:' + service_name, service_connection
 
 # Connect to a service at a found node's address & port
 
