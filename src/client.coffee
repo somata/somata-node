@@ -144,9 +144,7 @@ Client::getServiceConnection = (service_name, cb) ->
 
         # Or wait for it to connect
         else
-            console.log 'waiting for connection...'
             @connection_manager.once 'connected:' + service_name, (service_connection) ->
-                console.log 'got connection'
                 cb null, service_connection
 
     else
