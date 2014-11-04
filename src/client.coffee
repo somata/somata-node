@@ -19,6 +19,8 @@ if process.env.SOMATA_PREFIX?
 class Client
     constructor: (options={}) ->
         _.extend @, options
+        @setDefaults()
+
         @consul_agent = new ConsulAgent
         @connection_manager = new EventEmitter
 
@@ -35,6 +37,11 @@ class Client
                 process.exit()
 
         return @
+
+# TODO: Define defaults in one consistent place
+Client::setDefaults = ->
+    _.defaults @,
+        save_connections: true
 
 # Remote method calls and event handling
 # ==============================================================================
@@ -133,7 +140,7 @@ Client::bindRemote = (service_name) ->
 Client::getServiceConnection = (service_name, cb) ->
     service_name = PREFIX + service_name
 
-    if service_connection = @service_connections[service_name]
+    if @save_connections && service_connection = @service_connections[service_name]
 
         # Use the existing connected connection
         if service_connection.connected
@@ -151,7 +158,9 @@ Client::getServiceConnection = (service_name, cb) ->
         @consul_agent.checkServiceHealth service_name, 0, (err, healthy_instances) =>
 
             if !healthy_instances.length
-                return cb "Could not find service `#{ service_name }`", null
+                err = "Could not find service `#{ service_name }`"
+                log.e err
+                return cb err, null
 
             # Choose one of the available instances and connect
             instance = helpers.randomChoice healthy_instances
@@ -159,7 +168,7 @@ Client::getServiceConnection = (service_name, cb) ->
             service_connection.connected = true
 
             # Save for later use
-            @saveServiceConnection instance.Service, service_connection
+            @saveServiceConnection instance.Service, service_connection if @save_connections
             cb null, service_connection
 
             # Let other connections know this is connected
@@ -169,7 +178,7 @@ Client::getServiceConnection = (service_name, cb) ->
 
 Client::connectToService = (instance) ->
     log.i "[connectToService] Connecting to #{ instance.Service.Service } @ #{ instance.Node.Node } <#{ instance.Node.Address }:#{ instance.Service.Port }>" if VERBOSE
-    connection = Connection.fromConsulService instance
+    connection = Connection.fromConsulService instance, @connection_options
     return connection
 
 # Save a connection to a service by name
