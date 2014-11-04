@@ -1,7 +1,7 @@
 moment = require 'moment'
 _ = require 'underscore'
 util = require 'util'
-ansi = require('ansi')(process.stdout)
+ansi = require('ansi')(process.stdout, {enabled: true})
 
 # Format the current date for logging
 date_format = 'YYYY-MM-DD hh:mm:ss'

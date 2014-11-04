@@ -136,7 +136,7 @@ module.exports = class SomataService extends EventEmitter
     handleSubscribe: (client_id, message) ->
         type = message.type
         subscription_id = message.id
-        subscription_key = [client_id, subscription_id].join(':')
+        subscription_key = [client_id, subscription_id].join('::')
         log.i "Subscribing <#{ subscription_key }>"
         @subscriptions_by_type[type] ||= []
         @subscriptions_by_type[type].push subscription_key
@@ -146,7 +146,7 @@ module.exports = class SomataService extends EventEmitter
     handleUnsubscribe: (client_id, message) ->
         type = message.type
         subscription_id = message.id
-        subscription_key = [client_id, subscription_id].join(':')
+        subscription_key = [client_id, subscription_id].join('::')
         log.w "Unsubscribing <#{ subscription_key }>"
         # TODO: Improve how subscriptions are stored
         for type, subscription_keys of @subscriptions_by_type
@@ -155,7 +155,7 @@ module.exports = class SomataService extends EventEmitter
 
     publish: (type, event) ->
         _.map @subscriptions_by_type[type], (subscription_key) =>
-            [client_id, subscription_id] = subscription_key.split ':'
+            [client_id, subscription_id] = subscription_key.split '::'
             @sendEvent client_id, subscription_id, event
 
     sendEvent: (client_id, subscription_id, event) ->
@@ -166,7 +166,7 @@ module.exports = class SomataService extends EventEmitter
 
     end: (type) ->
         _.map @subscriptions_by_type[type], (subscription_key) =>
-            [client_id, subscription_id] = subscription_key.split ':'
+            [client_id, subscription_id] = subscription_key.split '::'
             @sendEnd client_id, subscription_id
         delete @subscriptions_by_type[type]
 
