@@ -42,7 +42,8 @@ ConsulAgent::apiRequest = (method, path, data, cb) ->
 
     request request_options, (err, res, data) ->
         log.d '[apiRequest] Response status: ' + res.statusCode if VERBOSE
-        last_index = res.headers['x-consul-index']
+        if _last_index = res.headers['x-consul-index']
+            last_index = _last_index
         cb(err, data) if cb?
 
 # Core API requests
