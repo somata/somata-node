@@ -62,11 +62,16 @@ Client::remote = (service_name, method, args..., cb) ->
         if VERBOSE
             cb = -> log.w "#{ service_name }:#{ method } completed with no callback."
         else cb = null
+
+    message_id = helpers.randomString 16
+
     @getServiceConnection service_name, (err, service_connection) ->
         if err
             log.e err
         else
-            service_connection.sendMethod method, args, cb
+            service_connection.sendMethod message_id, method, args, cb
+
+    return message_id
 
 # Subscriptions
 # --------------------------------------
@@ -83,45 +88,52 @@ Client::subscribe = (service_name, type, args..., cb) ->
         args.push cb
         cb = -> log.w "#{ service_name }:#{ type } event received with no callback."
 
-    # In case the subsctiption fails or drops
-    _retrySubscribe = (=> @subscribe service_name, type, args..., cb)
+    # Create a subscription ID to be returned
+    subscription_id = "#{ service_name }:#{ type }"
+    subscription_id += "(#{ args.join(', ') })" if args.length
+    console.log "subscribing with #{ subscription_id }?"
 
     # Look for the service
-    @getServiceConnection service_name, (err, service_connection) =>
+    @getServiceConnection service_name, (err, service_connection, retry=true) =>
 
-        if err
-            # Attempt to retry subscription if the service was not found
-            log.e err + "... retrying in #{ CONNECTION_RETRY_MS/1000 }s"
-            setTimeout _retrySubscribe, CONNECTION_RETRY_MS
+        # TODO: Move into getServiceConnection
+        # if err
+        #     # Attempt to retry subscription if the service was not found
+        #     log.e err + "... retrying in #{ CONNECTION_RETRY_MS/1000 }s"
+        #     setTimeout _retrySubscribe, CONNECTION_RETRY_MS
 
-        else
-            # If we've got a connection, send a subscription message with it
-            service = service_connection.service
-            subscription = service_connection.sendSubscribe type, args, cb
-            subscription.service = service_name
-            subscription.connection = service_connection
-            @service_subscriptions[subscription.id] = subscription
+        # If we've got a connection, send a subscription message with it
+        service = service_connection.service
+        subscription = service_connection.sendSubscribe subscription_id, type, args, cb
+        subscription.service = service_name
+        subscription.connection = service_connection
+        @service_subscriptions[subscription_id] = subscription
 
-            # Attempt to resubscribe if the service is deregistered
-            @consul_agent.once 'deregister:services/' + service.ID, =>
-                # Only retry if the subsctiption has not already been ended
-                if service_connection.pending_responses[subscription.id]?
-                    delete service_connection.pending_responses[subscription.id]
-                    _retrySubscribe()
+        # Attempt to resubscribe if the service is deregistered
+        @consul_agent.once 'deregister:services/' + service.ID, =>
+            # Only retry if the subsctiption has not already been ended
+            if service_connection.pending_responses[subscription_id]?
+                delete service_connection.pending_responses[subscription_id]
+                _retrySubscribe()
+
+    return subscription_id
 
 # Client::on is an alias for Client::subscribe
 
 Client::on = (service_name, type, args..., cb) ->
     @subscribe service_name, type, args..., cb
 
-# Unsubscribe from every connected subscription
+# Unsubscribe from matching subscriptions
 
-Client::unsubscribe = (_sub) ->
+Client::unsubscribe = (_sub_id) ->
     _.chain(@service_subscriptions).pairs()
-        .where(_sub)
-        .map ([sub_id, sub], _cb) =>
+        .filter((pair) -> pair[0] == _sub_id)
+        .map (pair, _cb) =>
+            [sub_id, sub] = pair
             sub.connection.sendUnsubscribe sub_id, sub.type
             delete @service_subscriptions[sub_id]
+
+# Unsubscribe from every connected subscription
 
 Client::unsubscribeAll = ->
     _.pairs(@service_subscriptions).map ([sub_id, sub], _cb) ->
