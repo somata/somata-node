@@ -59,8 +59,10 @@ module.exports = class Connection extends EventEmitter
     # callback the message.
 
     handleMessage: (message) ->
-        log ">: #{ util.inspect message }" if VERBOSE
+        log "[connection.handleMessage] #{ util.inspect(message).slice(0,100).replace(/\s+/g, ' ') }" if VERBOSE
         if on_response = @pending_responses[message.id]
+            if on_response.timeout?
+                clearTimeout on_response.timeout
             if message.kind == 'response'
                 on_response(null, message.response)
                 delete @pending_responses[message.id]
@@ -80,22 +82,35 @@ module.exports = class Connection extends EventEmitter
     # generated for and attached to the message so that the service may respond
     # with the same ID when it has a response.
 
+    setPending: (message_id, on_response) ->
+        @pending_responses[message_id] = on_response
+
+        # Optionally create timeout handler
+        if @timeout_ms
+            dotimeout = =>
+                log.e "[TIMEOUT] Timing out request #{ message_id }"
+                @pending_responses[message_id](timeout: @timeout_ms, message: "Timed out")
+                delete @pending_responses[message_id]
+            @pending_responses[message_id].timeout = setTimeout dotimeout, @timeout_ms
+
     send: (message, on_response) ->
         message.id ||= randomString 16
         @socket.send JSON.stringify message
         if on_response?
-            @pending_responses[message.id] = on_response
+            @setPending message.id, on_response
         return message
 
-    sendMethod: (method, args, cb) ->
+    sendMethod: (id, method, args, cb) ->
         method_msg =
+            id: id
             kind: 'method'
             method: method
             args: args
         @send method_msg, cb
 
-    sendSubscribe: (type, args, cb) ->
+    sendSubscribe: (id, type, args, cb) ->
         subscribe_msg =
+            id: id
             kind: 'subscribe'
             type: type
             args: args
@@ -103,8 +118,8 @@ module.exports = class Connection extends EventEmitter
 
     sendUnsubscribe: (id, type) ->
         unsubscribe_msg =
-            kind: 'unsubscribe'
             id: id
+            kind: 'unsubscribe'
             type: type
         @send unsubscribe_msg
         delete @pending_responses[id]
@@ -113,8 +128,8 @@ module.exports = class Connection extends EventEmitter
 
 # Class methods
 
-Connection.fromConsulService = (instance) ->
-    return new Connection
+Connection.fromConsulService = (instance, options={}) ->
+    return new Connection _.extend options,
         host: instance.Node.Address
         port: instance.Service.Port
 
