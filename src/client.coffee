@@ -91,7 +91,7 @@ Client::subscribe = (service_name, type, args..., cb) ->
     # Create a subscription ID to be returned
     subscription_id = "#{ service_name }:#{ type }"
     subscription_id += "(#{ args.join(', ') })" if args.length
-    console.log "subscribing with #{ subscription_id }?"
+    log.i "[Client.subscribe] subscribing with id=#{ subscription_id }"
 
     # Look for the service
     @getServiceConnection service_name, (err, service_connection, retry=true) =>
@@ -167,7 +167,7 @@ Client::getServiceConnection = (service_name, cb) ->
         @service_connections[service_name] = connected: false
 
         # Find all healthy services of this name
-        @consul_agent.checkServiceHealth service_name, 0, (err, healthy_instances) =>
+        @consul_agent.getServiceHealth service_name, (err, healthy_instances) =>
 
             if !healthy_instances.length
                 err = "Could not find service `#{ service_name }`"
@@ -180,7 +180,7 @@ Client::getServiceConnection = (service_name, cb) ->
             service_connection.connected = true
 
             # Save for later use
-            @saveServiceConnection instance.Service, service_connection if @save_connections
+            @saveServiceConnection instance.Service, service_connection #if @save_connections
             cb null, service_connection
 
             # Let other connections know this is connected
@@ -189,6 +189,9 @@ Client::getServiceConnection = (service_name, cb) ->
 # Connect to a service at a found node's address & port
 
 Client::connectToService = (instance) ->
+    log.d "attempting conncet 2 " , instance
+    log.d "already conntected to " , @service_connections
+    if !@service_connections[instance.Service.Service]
     log.i "[connectToService] Connecting to #{ instance.Service.Service } @ #{ instance.Node.Node } <#{ instance.Node.Address }:#{ instance.Service.Port }>" if VERBOSE
     connection = Connection.fromConsulService instance, @connection_options
     return connection
@@ -197,8 +200,8 @@ Client::connectToService = (instance) ->
 
 Client::saveServiceConnection = (service, service_connection) ->
     service_connection.service = service
-    @service_connections[service.Service] = service_connection
-    @consul_agent.known_services.push service.Service
+    @service_connections[service.Service] ||= []
+    @service_connections[service.Service].push service_connection
 
     if KEEPALIVE
         @consul_agent.once 'deregister:services/' + service.ID, =>

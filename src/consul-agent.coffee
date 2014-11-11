@@ -41,7 +41,10 @@ ConsulAgent::apiRequest = (method, path, data, cb) ->
         body: data
 
     request request_options, (err, res, data) ->
-        log.d '[apiRequest] Response status: ' + res.statusCode if VERBOSE
+        if err
+            log.e '[ConsulAgent.apiRequest] ERROR]', err
+            return cb err
+        log.d '[apiRequest] Response status: ' + res.statusCode + ' url: ' + path if VERBOSE
         if _last_index = res.headers['x-consul-index']
             last_index = _last_index
         cb(err, data) if cb?
@@ -68,9 +71,6 @@ ConsulAgent::deregisterExternalService = (service, cb) ->
 
 # Health
 
-ConsulAgent::getServiceHealth = (service_id, cb) ->
-    @apiRequest 'GET', '/health/service/' + service_id, cb
-
 ConsulAgent::watchServiceHealth = (service_id, index=last_index, cb) ->
     @apiRequest 'GET', '/health/service/' + service_id + makeWatchQuery(index), cb
 
@@ -91,19 +91,6 @@ ConsulAgent::deregisterCheck = (check_id, cb) ->
 ConsulAgent::checkPass = (check_id, cb) ->
     @apiRequest 'GET', '/agent/check/pass/' + check_id, cb
 
-# Higher level requests
-
-ConsulAgent::getAllServicesHealth = (cb) ->
-    all_service_instances = {}
-    self = @
-
-    self.getServices (err, services) ->
-        async.map _.keys(services), (service_id, _cb) ->
-            self.getServiceHealth service_id, (err, service_instances) ->
-                all_service_instances[service_id] = service_instances
-                _cb()
-        , -> cb null, all_service_instances
-
 # Find healthy service instances (those without a check in 'critical' state)
 
 healthyInstances = (instances) ->
@@ -111,14 +98,6 @@ healthyInstances = (instances) ->
         i.Checks.filter((c) ->
             c.Status == 'critical'
         ).length == 0
-
-ConsulAgent::getHealthyServiceInstances = (service_name, cb) ->
-
-    # Otherwise ask the consul agent
-    @getServiceHealth service_name, (err, instances) ->
-
-        # Filter by those with passing checks
-        cb err, healthyInstances instances
 
 # Find unhealthy service instances (those with a check in 'critical' state)
 
@@ -128,26 +107,33 @@ unhealthyInstances = (instances) ->
             c.Status == 'critical'
         ).length != 0
 
-ConsulAgent::getUnhealthyServiceInstances = (service_name, cb) ->
-
-    # Otherwise ask the consul agent
-    @getServiceHealth service_name, (err, instances) ->
-
-        # Filter by those with passing checks
-        cb err, unhealthyInstances instances
-
 # Emulate upcoming agent events by polling for changes to registered instances
+
+ConsulAgent::getServiceHealth = (service_name, cb) ->
+    if service_name in @known_services && healthy_instances = @known_instances[service_name]
+        console.log 'known service'
+        cb null, healthy_instances
+    else
+        console.log @known_services
+        @watchServiceHealth service_name, 0, (err, service_instances) =>
+            healthy_instances = healthyInstances service_instances
+            @known_instances[service_name] = healthy_instances
+            @known_services.push service_name
+            cb err, healthy_instances
+
+ConsulAgent::knowService = (service_name) ->
+    @known_services = _.union @known_services, [service_name]
 
 ConsulAgent::startWatchingKnownServices = ->
     again = @startWatchingKnownServices.bind(@)
     if @known_services.length
         async.map @known_services, (service_name, _cb) =>
-            @checkServiceHealth(service_name, null, _cb)
+            @updateServiceHealth(service_name, null, _cb)
         , again
     else
         setTimeout again, 250
 
-ConsulAgent::checkServiceHealth = (service_name, index=null, cb) ->
+ConsulAgent::updateServiceHealth = (service_name, index=null, cb) ->
     index = last_index if index == null
     @watchServiceHealth service_name, index, (err, service_instances) =>
         getServiceID = (ins) -> ins.Service.ID
