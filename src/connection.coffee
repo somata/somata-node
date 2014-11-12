@@ -86,7 +86,6 @@ module.exports = class Connection extends EventEmitter
 
     setPending: (message_id, on_response) ->
         @pending_responses[message_id] = on_response
-        console.log '[setPending] for ' + message_id
 
         # Optionally create timeout handler
         if @timeout_ms
