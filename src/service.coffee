@@ -216,6 +216,7 @@ module.exports = class SomataService extends EventEmitter
             Node: @name
             Address: @rpc_binding.host
             Service:
+                ID: @id
                 Service: @name
                 Port: @rpc_binding.port
                 Tags: ["proto:#{@rpc_binding.proto}"]
