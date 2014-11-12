@@ -152,64 +152,51 @@ Client::bindRemote = (service_name) ->
 Client::getServiceConnection = (service_name, cb) ->
     service_name = PREFIX + service_name
 
-    if @save_connections && service_connection = @service_connections[service_name]
+    # Find all healthy services of this name
+    @consul_agent.getServiceHealth service_name, (err, healthy_instances) =>
 
-        # Use the existing connected connection
-        if service_connection.connected
-            cb null, service_connection
+        if !healthy_instances.length
+            err = "Could not find service `#{ service_name }`"
+            log.e err
+            cb err, null
 
-        # Or wait for it to connect
-        else
-            @connection_manager.once 'connected:' + service_name, (service_connection) ->
-                cb null, service_connection
+        # Choose one of the available instances and connect
+        instance = helpers.randomChoice healthy_instances
+        service_connection = @connectToService instance
+        service_connection.connected = true
 
-    else
-        @service_connections[service_name] = connected: false
+        # Save for later use
+        @saveServiceConnection instance.Service, service_connection #if @save_connections
+        cb null, service_connection
 
-        # Find all healthy services of this name
-        @consul_agent.getServiceHealth service_name, (err, healthy_instances) =>
-
-            if !healthy_instances.length
-                err = "Could not find service `#{ service_name }`"
-                log.e err
-                return cb err, null
-
-            # Choose one of the available instances and connect
-            instance = helpers.randomChoice healthy_instances
-            service_connection = @connectToService instance
-            service_connection.connected = true
-
-            # Save for later use
-            @saveServiceConnection instance.Service, service_connection #if @save_connections
-            cb null, service_connection
-
-            # Let other connections know this is connected
-            @connection_manager.emit 'connected:' + service_name, service_connection
+        # Let other connections know this is connected
+        @connection_manager.emit 'connected:' + service_name, service_connection
 
 # Connect to a service at a found node's address & port
 
 Client::connectToService = (instance) ->
-    log.d "attempting conncet 2 " , instance
-    log.d "already conntected to " , @service_connections
-    if !@service_connections[instance.Service.Service]
-    log.i "[connectToService] Connecting to #{ instance.Service.Service } @ #{ instance.Node.Node } <#{ instance.Node.Address }:#{ instance.Service.Port }>" if VERBOSE
+    if connection = @service_connections[instance.Service.Service]?[instance.Service.ID]
+        if connection.connected
+            return connection
+    log.i "[connectToService] Connecting to #{ instance.Service.ID } @ #{ instance.Node.Node } <#{ instance.Node.Address }:#{ instance.Service.Port }>" if VERBOSE
     connection = Connection.fromConsulService instance, @connection_options
+
+    if KEEPALIVE
+        @consul_agent.once 'deregister:services/' + instance.Service.ID, =>
+            log.w "Deregistered: #{ instance.Service.ID }"
+            @killConnection instance
+
+    else
+        setTimeout (=> @killConnection instance), CONNECTION_TIMEOUT_MS
+
     return connection
 
 # Save a connection to a service by name
 
 Client::saveServiceConnection = (service, service_connection) ->
     service_connection.service = service
-    @service_connections[service.Service] ||= []
-    @service_connections[service.Service].push service_connection
-
-    if KEEPALIVE
-        @consul_agent.once 'deregister:services/' + service.ID, =>
-            log.w "Deregistered: #{ service.ID }"
-            @killConnection service.Service
-
-    else
-        setTimeout (=> @killConnection service.Service), CONNECTION_TIMEOUT_MS
+    @service_connections[service.Service] ||= {}
+    @service_connections[service.Service][service.ID] = service_connection
 
 # Disconnecting
 # ------------------------------------------------------------------------------
@@ -220,14 +207,16 @@ Client::purgeDeadServiceConnections = ->
     @getUnhealthyServiceInstances (err, unhealthy_instances) =>
         unhealthy_instances.each (instance) =>
             if @service_connections[instance.Service.Service]?
-                @killConnection instance.Service.Service
+                @killConnection instance
 
 # Kill an existing connection
 
-Client::killConnection = (service_name) ->
+Client::killConnection = (instance) ->
+    service_name = instance.Service.Service
+    service_id = instance.Service.ID
     log.w '[killConnection] ' + service_name if VERBOSE
-    if connection = @service_connections[service_name]
-        delete @service_connections[service_name]
+    if connection = @service_connections[service_name]?[service_id]
+        delete @service_connections[service_name][service_id]
         doClose = ->
             log.w "Closing connection to #{ service_name }..."
             connection.close()
