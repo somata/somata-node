@@ -10,6 +10,7 @@ log = helpers.log
 VERBOSE = process.env.SOMATA_VERBOSE || false
 EXTERNAL = process.env.SOMATA_EXTERNAL || false
 CHECK_INTERVAL = parseInt(process.env.SOMATA_CHECK_INTERVAL) || 9000
+CHECK_TTL = process.env.SOMATA_CHECK_TTL || ((CHECK_INTERVAL / 1000) + 4 + "s")
 SERVICE_HOST = process.env.SOMATA_SERVICE_HOST
 
 PREFIX = ''
@@ -201,7 +202,7 @@ module.exports = class SomataService extends EventEmitter
         if CHECK_INTERVAL > 0
             service_description.Check =
                 Interval: CHECK_INTERVAL
-                TTL: "10s"
+                TTL: CHECK_TTL
 
         # Register the service
         @consul_agent.registerService service_description, (err, registered) =>

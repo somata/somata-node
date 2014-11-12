@@ -8,7 +8,7 @@ log = helpers.log
 
 VERBOSE = process.env.SOMATA_VERBOSE || false
 KEEPALIVE = process.env.SOMATA_KEEPALIVE || true
-CONNECTION_TIMEOUT_MS = 6500
+CONNECTION_KEEPALIVE_MS = 6500
 CONNECTION_LINGER_MS = 1500
 CONNECTION_RETRY_MS = 2500
 
@@ -29,6 +29,9 @@ class Client
 
         # Keep track of existing connections by service name
         @service_connections = {}
+
+        # Keep track of service IDs by message ID
+        @message_services = {}
 
         # Deregister when quit
         process.on 'SIGINT', =>
@@ -65,10 +68,11 @@ Client::remote = (service_name, method, args..., cb) ->
 
     message_id = helpers.randomString 16
 
-    @getServiceConnection service_name, (err, service_connection) ->
+    @getServiceConnection service_name, (err, service_connection) =>
         if err
             log.e err
         else
+            @message_services[message_id] = service_connection.service_id
             service_connection.sendMethod message_id, method, args, cb
 
     return message_id
@@ -178,6 +182,7 @@ Client::connectToService = (instance) ->
     if connection = @service_connections[instance.Service.Service]?[instance.Service.ID]
         if connection.connected
             return connection
+
     log.i "[connectToService] Connecting to #{ instance.Service.ID } @ #{ instance.Node.Node } <#{ instance.Node.Address }:#{ instance.Service.Port }>" if VERBOSE
     connection = Connection.fromConsulService instance, @connection_options
 
@@ -187,7 +192,7 @@ Client::connectToService = (instance) ->
             @killConnection instance
 
     else
-        setTimeout (=> @killConnection instance), CONNECTION_TIMEOUT_MS
+        setTimeout (=> @killConnection instance), CONNECTION_KEEPALIVE_MS
 
     return connection
 
