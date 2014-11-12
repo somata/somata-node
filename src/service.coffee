@@ -213,7 +213,7 @@ module.exports = class SomataService extends EventEmitter
 
     registerExternally: (cb) ->
         service_description =
-            Node: @name
+            Node: @id
             Address: @rpc_binding.host
             Service:
                 ID: @id
