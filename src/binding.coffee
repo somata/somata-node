@@ -39,7 +39,7 @@ module.exports = class Binding extends EventEmitter
             @socket.bindSync @address
             @didBind()
         catch err
-            log.e err
+            log.e "[tryBinding] Failed to bind on #{ @address }", err
             if n_retried < 5
                 log.w "[tryBinding] Retrying..."
                 @port = randomPort()
