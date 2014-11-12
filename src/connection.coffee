@@ -98,9 +98,9 @@ module.exports = class Connection extends EventEmitter
 
     send: (message, on_response) ->
         message.id ||= randomString 16
-        @socket.send JSON.stringify message
         if on_response?
             @setPending message.id, on_response
+        @socket.send JSON.stringify message
         return message
 
     sendMethod: (id, method, args, cb) ->
