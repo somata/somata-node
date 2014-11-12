@@ -117,7 +117,7 @@ ConsulAgent::getServiceHealth = (service_name, cb) ->
             healthy_instances = healthyInstances service_instances
             # Save healthy instances and add service as known for polling
             @known_instances[service_name] = healthy_instances
-            @known_services.push service_name
+            @known_services.push service_name if !(service_name in @known_services)
             cb err, healthy_instances
     #TODO? 3rd rule of if there is an ongoing attempt to fetch service instances
 
