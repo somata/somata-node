@@ -158,7 +158,7 @@ Client::getServiceConnection = (service_name, cb) ->
         if !healthy_instances.length
             err = "Could not find service `#{ service_name }`"
             log.e err
-            cb err, null
+            return cb err, null
 
         # Choose one of the available instances and connect
         instance = helpers.randomChoice healthy_instances
