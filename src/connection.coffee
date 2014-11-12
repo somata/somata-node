@@ -74,6 +74,8 @@ module.exports = class Connection extends EventEmitter
             else if message.kind == 'end'
                 on_response(null, null, true)
                 delete @pending_responses[message.id]
+        else
+            log.w '[handleMessage] No pending response for ' + message.id, @pending_responses
 
     # Send a message to the connected-to service
     # --------------------------------------------------------------------------
@@ -84,6 +86,7 @@ module.exports = class Connection extends EventEmitter
 
     setPending: (message_id, on_response) ->
         @pending_responses[message_id] = on_response
+        console.log '[setPending] for ' + message_id
 
         # Optionally create timeout handler
         if @timeout_ms
