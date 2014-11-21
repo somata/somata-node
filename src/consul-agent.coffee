@@ -74,6 +74,9 @@ ConsulAgent::deregisterExternalService = (service, cb) ->
 ConsulAgent::watchServiceHealth = (service_id, index=last_index, cb) ->
     @apiRequest 'GET', '/health/service/' + service_id + makeWatchQuery(index), cb
 
+ConsulAgent::fetchServiceHealth = (service_id, cb) ->
+    @apiRequest 'GET', '/health/service/' + service_id, cb
+
 # Agent
 
 ConsulAgent::registerService = (service, cb) ->
@@ -120,6 +123,15 @@ ConsulAgent::getServiceHealth = (service_name, cb) ->
             @known_services.push service_name if !(service_name in @known_services)
             cb err, healthy_instances
     #TODO? 3rd rule of if there is an ongoing attempt to fetch service instances
+
+ConsulAgent::getAllServicesHealth = (cb) ->
+    @getServices (err, all_services) =>
+        all_service_names = _.keys(all_services).filter (n) -> n!='consul'
+        async.map all_service_names, (service_name, _cb) =>
+            @fetchServiceHealth service_name, (err, service_health) ->
+                _cb err, [service_name, service_health]
+        , (err, all_service_healths) ->
+            cb err, _.object all_service_healths
 
 ConsulAgent::knowService = (service_name) ->
     @known_services = _.union @known_services, [service_name]
