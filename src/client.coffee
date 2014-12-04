@@ -95,31 +95,37 @@ Client::subscribe = (service_name, type, args..., cb) ->
     # Create a subscription ID to be returned
     subscription_id = "#{ service_name }:#{ type }"
     subscription_id += "(#{ args.join(', ') })" if args.length
-    log.i "[Client.subscribe] subscribing with id=#{ subscription_id }"
 
-    # Look for the service
-    @getServiceConnection service_name, (err, service_connection, retry=true) =>
+    me = @
+    _trySubscribe = ->
 
-        # TODO: Move into getServiceConnection
-        # if err
-        #     # Attempt to retry subscription if the service was not found
-        #     log.e err + "... retrying in #{ CONNECTION_RETRY_MS/1000 }s"
-        #     setTimeout _retrySubscribe, CONNECTION_RETRY_MS
+        # Look for the service
+        me.getServiceConnection service_name, (err, service_connection) ->
 
-        # If we've got a connection, send a subscription message with it
-        service = service_connection.service
-        subscription = service_connection.sendSubscribe subscription_id, type, args, cb
-        subscription.service = service_name
-        subscription.connection = service_connection
-        @service_subscriptions[subscription_id] = subscription
+            # TODO: Move retrying into getServiceConnection?
 
-        # Attempt to resubscribe if the service is deregistered
-        @consul_agent.once 'deregister:services/' + service.ID, =>
-            # Only retry if the subsctiption has not already been ended
-            if service_connection.pending_responses[subscription_id]?
-                delete service_connection.pending_responses[subscription_id]
-                _retrySubscribe()
+            if service_connection?
 
+                # If we've got a connection, send a subscription message with it
+                service = service_connection.service
+                log.i "[Client.subscribe] #{ service.ID } : #{ type }"
+                subscription = service_connection.sendSubscribe subscription_id, type, args, cb
+                subscription.service = service_name
+                subscription.connection = service_connection
+                me.service_subscriptions[subscription_id] = subscription
+
+                # Attempt to resubscribe if the service is deregistered but the
+                # subscription has not already been ended
+                me.consul_agent.once 'deregister:services/' + service.ID, ->
+                    if service_connection.pending_responses[subscription_id]?
+                        delete service_connection.pending_responses[subscription_id]
+                        setTimeout _trySubscribe, 1500
+
+            else
+                # TODO: Exponential backoff
+                setTimeout _trySubscribe, 1500
+
+    _trySubscribe()
     return subscription_id
 
 # Client::on is an alias for Client::subscribe
@@ -223,7 +229,7 @@ Client::killConnection = (instance) ->
     if connection = @service_connections[service_name]?[service_id]
         delete @service_connections[service_name][service_id]
         doClose = ->
-            log.w "Closing connection to #{ service_name }..."
+            log.w "Closing connection to #{ service_name }..." if VERBOSE
             connection.close()
         setTimeout doClose, CONNECTION_LINGER_MS
 
