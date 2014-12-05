@@ -1,6 +1,7 @@
-moment = require 'moment'
-_ = require 'underscore'
 util = require 'util'
+crypto = require 'crypto'
+_ = require 'underscore'
+moment = require 'moment'
 ansi = require('ansi')(process.stdout, {enabled: true})
 
 # Format the current date for logging
@@ -56,3 +57,7 @@ exports.randomPort = ->
 
 exports.makeBindingAddress = (protocol, port) ->
     return protocol + '://0.0.0.0:' + port
+
+exports.md5 = (s) -> crypto.createHash('md5').update(s).digest('hex')
+exports.hashobj = (o) -> exports.md5 JSON.stringify o
+
