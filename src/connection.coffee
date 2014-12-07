@@ -85,15 +85,17 @@ module.exports = class Connection extends EventEmitter
     # with the same ID when it has a response.
 
     setPending: (message_id, on_response) ->
-        @pending_responses[message_id] = on_response
 
         # Optionally create timeout handler
         if @timeout_ms
             dotimeout = =>
                 log.e "[TIMEOUT] Timing out request #{ message_id }"
-                @pending_responses[message_id](timeout: @timeout_ms, message: "Timed out")
+                on_response(timeout: @timeout_ms, message: "Timed out")
                 delete @pending_responses[message_id]
-            @pending_responses[message_id].timeout = setTimeout dotimeout, @timeout_ms
+            on_response.timeout = setTimeout dotimeout, @timeout_ms
+
+        # Save the response in the pending hash
+        @pending_responses[message_id] = on_response
 
     send: (message, on_response) ->
         message.id ||= randomString 16

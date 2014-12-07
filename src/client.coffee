@@ -4,7 +4,7 @@ _ = require 'underscore'
 {EventEmitter} = require 'events'
 ConsulAgent = require './consul-agent'
 Connection = require './connection'
-log = helpers.log
+{log, randomString} = helpers
 
 VERBOSE = process.env.SOMATA_VERBOSE || false
 KEEPALIVE = process.env.SOMATA_KEEPALIVE || true
@@ -95,6 +95,7 @@ Client::subscribe = (service_name, type, args..., cb) ->
     # Create a subscription ID to be returned
     subscription_id = "#{ service_name }:#{ type }"
     subscription_id += "(#{ args.join(', ') })" if args.length
+    subscription_id += randomString(4)
 
     me = @
     _trySubscribe = ->
@@ -109,6 +110,7 @@ Client::subscribe = (service_name, type, args..., cb) ->
                 # If we've got a connection, send a subscription message with it
                 service = service_connection.service
                 log.i "[Client.subscribe] #{ service.ID } : #{ type }"
+
                 subscription = service_connection.sendSubscribe subscription_id, type, args, cb
                 subscription.service = service_name
                 subscription.connection = service_connection
