@@ -22,7 +22,7 @@ pipe = new SomataPipeline({client: client})
             client.consul_agent.getServiceNodes args[0], cb
     )
     .set('vars', 'consul_base', client.consul_agent.base_url)
-    .alias('deregister-service', 'key $consul_base/health/service/ $! | get $! @ :Service:ID')
+    .alias('deregister', 'val | put $consul_base/catalog/deregister')
 
 repl = new PipelineREPL(pipe)
 
