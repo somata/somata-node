@@ -11,6 +11,7 @@ PipelineREPL = require 'hashpipe/repl'
 
 pipe = new SomataPipeline({client: client})
     .use('http')
+    .use('exec')
     .use('encodings')
     .use(require('hashpipe/modules/redis').connect())
     .use(
@@ -52,6 +53,7 @@ else if script_filename = argv.run || argv.r
     runWith repl, script
 
 else if script = argv.exec || argv.e
+    repl.plain = true
     runWith repl, script
 
 else

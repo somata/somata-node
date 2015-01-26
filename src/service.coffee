@@ -191,6 +191,12 @@ module.exports = class SomataService extends EventEmitter
     #
     # TODO: Abstract so that some registry service besides Consul may be used
 
+    serviceTags: ->
+        tags = []
+        tags.push "proto:#{@rpc_binding.proto}"
+        tags.push "host:#{@rpc_binding.host}" if @rpc_binding.proto != 'tcp'
+        tags
+
     register: (cb) ->
         return @registerExternally(cb) if EXTERNAL
 
@@ -198,7 +204,7 @@ module.exports = class SomataService extends EventEmitter
             Name: @name
             Id: @id
             Port: @rpc_binding.port
-            Tags: ["proto:#{@rpc_binding.proto}"]
+            Tags: @serviceTags()
         if CHECK_INTERVAL > 0
             service_description.Check =
                 Interval: CHECK_INTERVAL
@@ -208,7 +214,7 @@ module.exports = class SomataService extends EventEmitter
         @consul_agent.registerService service_description, (err, registered) =>
             # Start the TTL check
             @startChecks() if CHECK_INTERVAL > 0
-            log.s "Registered service `#{ @id }` on :#{ @rpc_binding.port }"
+            log.s "Registered service `#{ @id }` on #{ @rpc_binding.address }"
             cb(null, registered) if cb?
 
     registerExternally: (cb) ->

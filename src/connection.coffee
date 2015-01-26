@@ -4,9 +4,9 @@ _ = require 'underscore'
 {EventEmitter} = require 'events'
 {log, randomString} = require './helpers'
 
-VERBOSE = process.env.SOMATA_VERBOSE || false
-DEFAULT_PROTO = 'tcp'
-DEFAULT_CONNECT = 'localhost'
+VERBOSE =         process.env.SOMATA_VERBOSE || false
+DEFAULT_PROTO =   process.env.SOMATA_PROTO   || 'tcp'
+DEFAULT_CONNECT = process.env.SOMATA_CONNECT || '127.0.0.1'
 
 module.exports = class Connection extends EventEmitter
 
@@ -28,13 +28,16 @@ module.exports = class Connection extends EventEmitter
     # `host`, and `port`, and connects to that address.
 
     constructor: (options={}) ->
+        log.d '[Connection.constructor]', options if VERBOSE
         _.extend @, options
 
         @id ||= randomString()
 
         @proto ||= DEFAULT_PROTO
         @host ||= DEFAULT_CONNECT
-        @address = @proto + '://' + @host + ':' + @port
+        #@address = @proto + '://' + @host + ':' + @port
+        @address = @proto + '://' + @host
+        @address += ':' + @port if @proto != 'ipc'
 
         @connect()
 
@@ -133,7 +136,9 @@ module.exports = class Connection extends EventEmitter
 # Class methods
 
 Connection.fromConsulService = (instance, options={}) ->
-    return new Connection _.extend options,
-        host: instance.Node.Address
-        port: instance.Service.Port
+    instance_tags = _.object instance.Service.Tags?.map (t) -> t.split(':')
+    proto = instance_tags.proto || DEFAULT_PROTO
+    host = instance_tags.host || instance.Node.Address
+    port = instance.Service.Port
+    return new Connection _.extend options, {proto, host, port}
 
