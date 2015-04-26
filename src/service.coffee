@@ -3,6 +3,7 @@ util = require 'util'
 helpers = require './helpers'
 _ = require 'underscore'
 {EventEmitter} = require 'events'
+emitters = require './events'
 ConsulAgent = require './consul-agent'
 Binding = require './binding'
 log = helpers.log
@@ -48,8 +49,8 @@ module.exports = class SomataService extends EventEmitter
             @register()
 
         # Deregister when quit
-        process.on 'SIGINT', =>
-            @deregister -> process.exit()
+        emitters.exit.onExit (cb) =>
+            @deregister cb
 
     bindRPC: (cb) ->
         @rpc_binding = new Binding @rpc_options
@@ -103,7 +104,7 @@ module.exports = class SomataService extends EventEmitter
                     err.slice(11) == 'undefined is not a function'
                         err = "ArityError? method `#{ method_name }` takes #{ _method.length-1 } arguments."
                 log.e '[ERROR] ' + err
-                console.log e.stack
+                console.error e.stack
                 @sendError client_id, message.id, err
 
         # Method not found for this service

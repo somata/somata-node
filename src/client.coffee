@@ -1,10 +1,11 @@
 util = require 'util'
 helpers = require './helpers'
 _ = require 'underscore'
-{EventEmitter} = require 'events'
 ConsulAgent = require './consul-agent'
 Connection = require './connection'
 {log, randomString} = helpers
+{EventEmitter} = require 'events'
+emitters = require './events'
 
 VERBOSE = process.env.SOMATA_VERBOSE || false
 KEEPALIVE = process.env.SOMATA_KEEPALIVE || true
@@ -34,10 +35,10 @@ class Client
         @message_services = {}
 
         # Deregister when quit
-        process.on 'SIGINT', =>
+        emitters.exit.onExit (cb) =>
+            log.w 'Unsubscribing remote listeners...'
             @unsubscribeAll()
-            if !@parent?
-                process.exit()
+            cb()
 
         return @
 

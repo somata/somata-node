@@ -24,6 +24,8 @@ pipe = new SomataPipeline({client: client})
     )
     .set('vars', 'consul_base', client.consul_agent.base_url)
     .alias('deregister', 'val | put $consul_base/catalog/deregister')
+    .alias('deregister-all', 'service-nodes || deregister $!')
+    .alias('deregister-first', 'service-nodes | head $(length | - 1) || deregister $!')
 
 repl = new PipelineREPL(pipe)
 
