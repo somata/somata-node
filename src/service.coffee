@@ -3,6 +3,7 @@ util = require 'util'
 helpers = require './helpers'
 _ = require 'underscore'
 {EventEmitter} = require 'events'
+emitters = require './events'
 ConsulAgent = require './consul-agent'
 Binding = require './binding'
 log = helpers.log
@@ -48,8 +49,8 @@ module.exports = class SomataService extends EventEmitter
             @register()
 
         # Deregister when quit
-        process.on 'SIGINT', =>
-            @deregister -> process.exit()
+        emitters.exit.onExit (cb) =>
+            @deregister cb
 
     bindRPC: (cb) ->
         @rpc_binding = new Binding @rpc_options
@@ -103,7 +104,7 @@ module.exports = class SomataService extends EventEmitter
                     err.slice(11) == 'undefined is not a function'
                         err = "ArityError? method `#{ method_name }` takes #{ _method.length-1 } arguments."
                 log.e '[ERROR] ' + err
-                console.log e.stack
+                console.error e.stack
                 @sendError client_id, message.id, err
 
         # Method not found for this service
@@ -191,6 +192,12 @@ module.exports = class SomataService extends EventEmitter
     #
     # TODO: Abstract so that some registry service besides Consul may be used
 
+    serviceTags: ->
+        tags = []
+        tags.push "proto:#{@rpc_binding.proto}"
+        tags.push "host:#{@rpc_binding.host}" if @rpc_binding.proto != 'tcp'
+        tags
+
     register: (cb) ->
         return @registerExternally(cb) if EXTERNAL
 
@@ -198,7 +205,7 @@ module.exports = class SomataService extends EventEmitter
             Name: @name
             Id: @id
             Port: @rpc_binding.port
-            Tags: ["proto:#{@rpc_binding.proto}"]
+            Tags: @serviceTags()
         if CHECK_INTERVAL > 0
             service_description.Check =
                 Interval: CHECK_INTERVAL
@@ -208,7 +215,7 @@ module.exports = class SomataService extends EventEmitter
         @consul_agent.registerService service_description, (err, registered) =>
             # Start the TTL check
             @startChecks() if CHECK_INTERVAL > 0
-            log.s "Registered service `#{ @id }` on :#{ @rpc_binding.port }"
+            log.s "Registered service `#{ @id }` on #{ @rpc_binding.address }"
             cb(null, registered) if cb?
 
     registerExternally: (cb) ->

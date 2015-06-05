@@ -12,7 +12,7 @@ _sayHello = ->
     n_sent++
     hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->
         n_recd++
-    setTimeout _sayHello, 10
+    setTimeout _sayHello, 500
 
 _sayHello()
 

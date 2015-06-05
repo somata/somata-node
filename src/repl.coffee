@@ -11,6 +11,7 @@ PipelineREPL = require 'hashpipe/repl'
 
 pipe = new SomataPipeline({client: client})
     .use('http')
+    .use('exec')
     .use('encodings')
     .use(require('hashpipe/modules/redis').connect())
     .use(
@@ -23,6 +24,8 @@ pipe = new SomataPipeline({client: client})
     )
     .set('vars', 'consul_base', client.consul_agent.base_url)
     .alias('deregister', 'val | put $consul_base/catalog/deregister')
+    .alias('deregister-all', 'service-nodes || deregister $!')
+    .alias('deregister-first', 'service-nodes | head $(length | - 1) || deregister $!')
 
 repl = new PipelineREPL(pipe)
 
@@ -52,6 +55,7 @@ else if script_filename = argv.run || argv.r
     runWith repl, script
 
 else if script = argv.exec || argv.e
+    repl.plain = true
     runWith repl, script
 
 else

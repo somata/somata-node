@@ -3,19 +3,21 @@ util = require 'util'
 {EventEmitter} = require 'events'
 {randomPort, randomString, log} = require './helpers'
 
-VERBOSE = process.env.SOMATA_VERBOSE || false
-DEFAULT_PROTO = 'tcp'
-DEFAULT_BIND = process.env.SOMATA_BIND || '0.0.0.0'
+VERBOSE =       process.env.SOMATA_VERBOSE || false
+DEFAULT_PROTO = process.env.SOMATA_PROTO   || 'tcp'
+DEFAULT_BIND =  process.env.SOMATA_BIND    || '0.0.0.0'
+DEFAULT_HOST =  process.env.SOMATA_HOST    || '0.0.0.0'
 
 module.exports = class Binding extends EventEmitter
 
     constructor: (options={}) ->
+        log.d '[Binding.constructor]', options if VERBOSE
         @id = @id || randomString()
 
         @proto = options.proto || DEFAULT_PROTO
-        @bind = DEFAULT_BIND
-        @host = options.host
-        @port = options.port || randomPort()
+        @bind ||= DEFAULT_BIND
+        @host = options.host || DEFAULT_HOST
+        @port = options.port || randomPort() if @proto != 'ipc'
 
         @tryBinding()
 
@@ -29,7 +31,8 @@ module.exports = class Binding extends EventEmitter
             @handleMessage client_id.toString(), JSON.parse message_json
 
     makeAddress: ->
-        @address = @proto + '://' + @bind + ':' + @port
+        @address = @proto + '://' + @host
+        @address += ':' + @port if @proto != 'ipc'
 
     tryBinding: (n_retried=0) ->
         try

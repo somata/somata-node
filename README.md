@@ -1,7 +1,7 @@
 Somata
 =====
 
-Micro-service orchestration framework built on [Consul](http://www.consul.io) and [ZeroMQ](http://zeromq.org).
+Micro-service orchestration framework built on [ZeroMQ](http://zeromq.org) and [Consul](http://www.consul.io).
 
 # Usage
 
