@@ -1,6 +1,6 @@
 {
     "name": "somata",
-    "version": "0.0.16",
+    "version": "0.0.17",
     "description": "Micro-service framework built on Consul and ZeroMQ",
     "homepage": "http://github.com/somata/somata-node",
     "repository": {
@@ -20,7 +20,9 @@
     "main": "lib/index.js",
     "dependencies": {
         "ansi": "0.3.x",
+        "async": "0.9.x",
         "moment": "2.x.x",
+        "request": "2.x.x",
         "underscore": "1.x.x",
         "zmq": "2.x.x"
     }
