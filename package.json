@@ -18,12 +18,6 @@
         "zeromq"
     ],
     "main": "lib/index.js",
-    "bin": {
-        "somata-repl": "lib/repl.js"
-    },
-    "scripts": {
-        "build": "./build.sh"
-    },
     "dependencies": {
         "ansi": "0.3.x",
         "moment": "2.x.x",
