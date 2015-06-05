@@ -26,7 +26,6 @@
     },
     "dependencies": {
         "ansi": "0.3.x",
-        "minimist": "0.2.x",
         "moment": "2.x.x",
         "underscore": "1.x.x",
         "zmq": "2.x.x"
