@@ -117,6 +117,7 @@ ConsulAgent::getServiceHealth = (service_name, cb) ->
         cb null, healthy_instances
     else
         @watchServiceHealth service_name, 0, (err, service_instances) =>
+            return cb err, [] if err?
             healthy_instances = healthyInstances service_instances
             # Save healthy instances and add service as known for polling
             @known_instances[service_name] = healthy_instances
