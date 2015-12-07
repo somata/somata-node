@@ -64,19 +64,25 @@ module.exports = class Connection extends EventEmitter
     handleMessage: (message) ->
         log "[connection.handleMessage] #{ util.inspect(message).slice(0,100).replace(/\s+/g, ' ') }" if VERBOSE
         if on_response = @pending_responses[message.id]
+            # Clear timeout if it exists
             if on_response.timeout?
                 clearTimeout on_response.timeout
+
+            # Response events: 'response' and 'error'
             if message.kind == 'response'
                 on_response(null, message.response)
                 delete @pending_responses[message.id]
             else if message.kind == 'error'
                 on_response(message.error, null)
                 delete @pending_responses[message.id]
+
+            # Subscription events: 'event' and 'end'
             else if message.kind == 'event'
-                on_response(null, message.event)
+                on_response(message.event)
             else if message.kind == 'end'
-                on_response(null, null, true)
+                on_response(null, true)
                 delete @pending_responses[message.id]
+
         else
             log.w '[handleMessage] No pending response for ' + message.id, @pending_responses
 
