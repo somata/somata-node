@@ -8,6 +8,6 @@ util = require 'util'
 announcement_client = new somata.Client
 
 # Execute the 'announcement' service's `sayannouncement` method with the argument 'world' ...
-announcement_client.on 'announcement', 'announcement', (err, message) ->
+announcement_client.on 'announcement', 'announcement', (message) ->
     log.s message
 
