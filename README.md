@@ -55,10 +55,61 @@ Found service hello@localhost:15555
 
 # Installation
 
-To get the somata library, with [npm](http://npmjs.org) do:
+## Dependencies
+
+Install ZeroMQ, Node.js and NPM, plus unzip for later.
+
+```sh
+$ sudo apt-get install nodejs npm libzmq-dev unzip
+$ sudo ln -s /usr/bin/nodejs /usr/bin/node # To fix node-gyp on Ubuntu
+```
+
+## The library
+
+Install the somata library with [npm](http://npmjs.org):
 
 ```sh
 $ npm install somata
 ```
 
-To install Consul, read [their installation instructions](http://www.consul.io/intro/getting-started/install.html).
+## Consul
+
+Get the latest download link for your platform from [the Consul download page](http://www.consul.io/downloads.html).
+
+```sh
+curl -LO https://releases.hashicorp.com/consul/0.6.0/consul_0.6.0_linux_amd64.zip
+unzip consul_0.6.0_linux_amd64.zip
+```
+
+This should give you a single binary which you can move somewhere in your `$PATH`.
+
+```sh
+sudo mv consul /usr/local/bin
+consul version
+```
+
+### Running consul
+
+Start the consul agent. For a basic self-sufficient agent:
+
+```sh
+consul agent -server -bootstrap -data-dir /tmp/consul
+```
+
+To keep it running in the background indefinitely:
+
+```sh
+$ nohup consul agent -server -bootstrap -data-dir /tmp/consul > consul.log &
+[1] 10049
+nohup: ignoring input and redirecting stderr to stdout
+```
+
+Test that Consul is running:
+
+```sh
+$ consul members
+Node             Address            Status  Type    Build  Protocol  DC
+ip-172-30-0-108  172.30.0.108:8301  alive   server  0.6.0  2         dc1
+```
+
+For more information on installing Consul read [their installation instructions](http://www.consul.io/intro/getting-started/install.html).
