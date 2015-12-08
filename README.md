@@ -77,15 +77,15 @@ $ npm install somata
 Get the latest download link for your platform from [the Consul download page](http://www.consul.io/downloads.html).
 
 ```sh
-curl -LO https://releases.hashicorp.com/consul/0.6.0/consul_0.6.0_linux_amd64.zip
-unzip consul_0.6.0_linux_amd64.zip
+$ curl -LO https://releases.hashicorp.com/consul/0.6.0/consul_0.6.0_linux_amd64.zip
+$ unzip consul_0.6.0_linux_amd64.zip
 ```
 
 This should give you a single binary which you can move somewhere in your `$PATH`.
 
 ```sh
-sudo mv consul /usr/local/bin
-consul version
+$ sudo mv consul /usr/local/bin
+$ consul version
 ```
 
 ### Running consul
@@ -93,7 +93,7 @@ consul version
 Start the consul agent. For a basic self-sufficient agent:
 
 ```sh
-consul agent -server -bootstrap -data-dir /tmp/consul
+$ consul agent -server -bootstrap -data-dir /tmp/consul
 ```
 
 To keep it running in the background indefinitely:
