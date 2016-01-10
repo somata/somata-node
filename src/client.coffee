@@ -1,7 +1,6 @@
 util = require 'util'
 helpers = require './helpers'
 _ = require 'underscore'
-ConsulAgent = require './consul-agent'
 Connection = require './connection'
 {log, randomString} = helpers
 {EventEmitter} = require 'events'
@@ -17,8 +16,8 @@ class Client
     constructor: (options={}) ->
         _.extend @, options
 
-        @consul_agent = new ConsulAgent
         @connection_manager = new EventEmitter
+        @registry_connection = new Connection port: 8420
 
         # Keep track of subscriptions
         @service_subscriptions = {}
@@ -102,12 +101,13 @@ Client::subscribe = (service_name, event_name, args..., cb) ->
                 subscription.connection = service_connection
                 me.service_subscriptions[subscription_id] = subscription
 
+                # TODO
                 # Attempt to resubscribe if the service is deregistered but the
                 # subscription has not already been ended
-                me.consul_agent.once 'deregister:services/' + service.id, ->
-                    if service_connection.pending_responses[subscription_id]?
-                        delete service_connection.pending_responses[subscription_id]
-                        setTimeout _trySubscribe, 1500
+                # me.consul_agent.once 'deregister:services/' + service.id, ->
+                #     if service_connection.pending_responses[subscription_id]?
+                #         delete service_connection.pending_responses[subscription_id]
+                #         setTimeout _trySubscribe, 1500
 
             else
                 # TODO: Exponential backoff
@@ -147,55 +147,23 @@ Client::bindRemote = (service_name) ->
 # Query for and connect to a service
 
 Client::getServiceConnection = (service_name, cb) ->
-    service_name = PREFIX + service_name
+    service_name = service_name
 
-    # Find all healthy services of this name
-    @consul_agent.getServiceHealth service_name, (err, healthy_instances) =>
+    if service_connection = @service_connections[service_name]
+        cb null, service_connection
+        return
 
-        if !healthy_instances.length
-            err = "Could not find service `#{ service_name }`"
-            log.e err
-            return cb err, null
+    @registry_connection.sendMethod null, 'getService', [service_name], (err, service_instance) =>
+        service_connection = new Connection port: service_instance.port
+        service_connection.service_instance = service_instance
+        @service_connections[service_name] = service_connection
 
-        # Choose one of the available instances and connect
-        instance = helpers.randomChoice healthy_instances
-        service_connection = @connectToService instance
-        service_connection.connected = true
+        # TODO: Let other connections know this is connected
+        # @connection_manager.emit 'connected:' + service_name, service_connection
 
-        # Save for later use
-        @saveServiceConnection instance.Service, service_connection #if @save_connections
         cb null, service_connection
 
-        # Let other connections know this is connected
-        @connection_manager.emit 'connected:' + service_name, service_connection
-
-# Connect to a service at a found node's address & port
-
-Client::connectToService = (instance) ->
-    if connection = @service_connections[instance.Service.Service]?[instance.Service.ID]
-        if connection.connected
-            return connection
-
-    log.i "[connectToService] Connecting to #{ instance.Service.ID } @ #{ instance.Node.Node } <#{ instance.Node.Address }:#{ instance.Service.Port }>" if VERBOSE
-    connection = Connection.fromConsulService instance, @connection_options
-
-    if KEEPALIVE
-        @consul_agent.once 'deregister:services/' + instance.Service.ID, =>
-            log.w "Deregistered: #{ instance.Service.ID }"
-            @killConnection instance
-
-    else
-        setTimeout (=> @killConnection instance), CONNECTION_KEEPALIVE_MS
-
-    return connection
-
-# Save a connection to a service by name
-
-Client::saveServiceConnection = (service, service_connection) ->
-    service_connection.service = service
-    @service_connections[service.Service] ||= {}
-    @service_connections[service.Service][service.ID] = service_connection
-
+# TODO
 # Disconnecting
 # ------------------------------------------------------------------------------
 

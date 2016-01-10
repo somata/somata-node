@@ -4,10 +4,12 @@ helpers = require './helpers'
 _ = require 'underscore'
 {EventEmitter} = require 'events'
 emitters = require './events'
-ConsulAgent = require './consul-agent'
 Binding = require './binding'
+Connection = require './connection'
 log = helpers.log
 
+REGISTRY_HOST = process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
+REGISTRY_PORT = process.env.SOMATA_REGISTRY_PORT || 8420
 VERBOSE = process.env.SOMATA_VERBOSE || false
 EXTERNAL = process.env.SOMATA_EXTERNAL || false
 CHECK_INTERVAL = parseInt(process.env.SOMATA_CHECK_INTERVAL) || 9000
@@ -27,10 +29,8 @@ module.exports = class SomataService extends EventEmitter
         @rpc_options ||= {}
         @rpc_options.host ||= SERVICE_HOST
 
-        # Connect to registry (Consul)
-        @consul_agent = new ConsulAgent
-
         # Bind and register the service
+        @registry_connection = new Connection port: REGISTRY_PORT
         @bindRPC =>
             @register()
 
@@ -175,49 +175,22 @@ module.exports = class SomataService extends EventEmitter
 
     # Register and deregister the service from the registry
     # --------------------------------------------------------------------------
-    #
-    # TODO: Abstract so that some registry service besides Consul may be used
-
-    serviceTags: ->
-        tags = []
-        tags.push "proto:#{@rpc_binding.proto}"
-        tags.push "host:#{@rpc_binding.host}" if @rpc_binding.proto != 'tcp'
-        tags
 
     register: (cb) ->
-        return @registerExternally(cb) if EXTERNAL
 
+        # TODO: Check/Heartbeat Info
         service_description =
-            Name: @name
-            Id: @id
-            Port: @rpc_binding.port
-            Tags: @serviceTags()
-        if CHECK_INTERVAL > 0
-            service_description.Check =
-                Interval: CHECK_INTERVAL
-                TTL: CHECK_TTL
+            id: @id
+            host: @rpc_binding.host
+            port: @rpc_binding.port
 
-        # Register the service
-        @consul_agent.registerService service_description, (err, registered) =>
-            # Start the TTL check
-            @startChecks() if CHECK_INTERVAL > 0
+        @registry_connection.sendMethod null, 'registerService', [@name, service_description], (err, registered) =>
             log.s "Registered service `#{ @id }` on #{ @rpc_binding.address }"
+            # TODO: Start the TTL check
+            #@startChecks() if CHECK_INTERVAL > 0
             cb(null, registered) if cb?
 
-    registerExternally: (cb) ->
-        service_description =
-            Node: @id
-            Address: @rpc_binding.host
-            Service:
-                ID: @id
-                Service: @name
-                Port: @rpc_binding.port
-                Tags: ["proto:#{@rpc_binding.proto}"]
-        @consul_agent.registerExternalService service_description, (err, registered) =>
-            log.s "Registered external service `#{ @id }` on #{ @rpc_binding.host }:#{ @rpc_binding.port }"
-            cb(null, registered) if cb?
-
-    # Check for existing unhealthy instance ports to connect as
+    # TODO: Check for existing unhealthy instance ports to connect as
     checkBindingPort: (cb) ->
         @consul_agent.getUnhealthyServiceInstances @name, (err, unhealthy_instances) =>
             if unhealthy_instances.length
@@ -226,24 +199,17 @@ module.exports = class SomataService extends EventEmitter
                 @rpc_options.port = helpers.randomPort()
             cb()
 
+    # TODO
     startChecks: ->
         setInterval (=>
             @consul_agent.checkPass 'service:' + @id
         ), CHECK_INTERVAL
 
+    # TODO
     deregister: (cb) ->
         return @deregisterExternally(cb) if EXTERNAL
 
         @consul_agent.deregisterService @id, (err, deregistered) =>
             log.e "[deregister] Deregistered `#{ @id }` from :#{ @rpc_binding.port }"
-            cb(null, deregistered) if cb?
-
-    deregisterExternally: (cb) ->
-        service_description =
-            Node: @name
-            ServiceID: @name
-
-        @consul_agent.deregisterExternalService service_description, (err, deregistered) =>
-            log.e "[deregisterExternally] Deregistered `#{ @id }` from #{ @rpc_binding.host }:#{ @rpc_binding.port }"
             cb(null, deregistered) if cb?
 
