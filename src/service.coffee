@@ -14,32 +14,18 @@ CHECK_INTERVAL = parseInt(process.env.SOMATA_CHECK_INTERVAL) || 9000
 CHECK_TTL = process.env.SOMATA_CHECK_TTL || ((CHECK_INTERVAL / 1000) + 4 + "s")
 SERVICE_HOST = process.env.SOMATA_SERVICE_HOST
 
-PREFIX = ''
-if process.env.SOMATA_PREFIX?
-    PREFIX = process.env.SOMATA_PREFIX + ':'
-
-# Descend down an object tree {one: {two: 3}} with a path 'one.two'
-descend = (o, c) ->
-    if c.length == 1
-        return o[c[0]].bind(o)
-    else
-        return descend o[c.shift()], c
-
 module.exports = class SomataService extends EventEmitter
 
     # Instatiate a Somata service
     # --------------------------------------------------------------------------
 
     constructor: (@name, @methods={}, options={}) ->
-        @name = PREFIX + @name
         @id = @name + '~' + helpers.randomString()
 
         # Determine options
         _.extend @, options
         @rpc_options ||= {}
-        @pub_options ||= {}
-
-        @rpc_options.host = SERVICE_HOST
+        @rpc_options.host ||= SERVICE_HOST
 
         # Connect to registry (Consul)
         @consul_agent = new ConsulAgent
@@ -85,10 +71,10 @@ module.exports = class SomataService extends EventEmitter
         method_name = message.method
         if _method = @getMethod method_name
 
-            # Execute the method with the arguments
             log 'Executing ' + method_name if VERBOSE
-            try
 
+            # Execute the named method with given arguments
+            try
                 _method message.args..., (err, response) =>
                     if err
                         @sendError client_id, message.id, err
@@ -109,8 +95,8 @@ module.exports = class SomataService extends EventEmitter
 
         # Method not found for this service
         else
-            # TODO: Send a failure message to client
-            log.i 'No method ' + message.method
+            log.e '[ERROR] No method ' + message.method
+            @sendError client_id, message.id, "No method " + message.method
 
     # Finding a method from the methods hash
 
@@ -122,7 +108,7 @@ module.exports = class SomataService extends EventEmitter
             return _method
         # Get a deeper level method from @methods
         if (method_context = method_name.split('.')).length > 1
-            return descend @methods, method_context
+            return helpers.descend @methods, method_context
         # Get a method from @methods
         else
             return @methods[method_name]

@@ -113,27 +113,27 @@ module.exports = class Connection extends EventEmitter
         @socket.send JSON.stringify message
         return message
 
-    sendMethod: (id, method, args, cb) ->
+    sendMethod: (id, method_name, args, cb) ->
         method_msg =
             id: id
             kind: 'method'
-            method: method
+            method: method_name
             args: args
         @send method_msg, cb
 
-    sendSubscribe: (id, type, args, cb) ->
+    sendSubscribe: (id, event_name, args, cb) ->
         subscribe_msg =
             id: id
             kind: 'subscribe'
-            type: type
+            type: event_name
             args: args
         @send subscribe_msg, cb
 
-    sendUnsubscribe: (id, type) ->
+    sendUnsubscribe: (id, event_name) ->
         unsubscribe_msg =
             id: id
             kind: 'unsubscribe'
-            type: type
+            type: event_name
         @send unsubscribe_msg
         delete @pending_responses[id]
 
