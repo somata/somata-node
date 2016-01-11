@@ -12,8 +12,7 @@ REGISTRY_HOST = process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
 REGISTRY_PORT = process.env.SOMATA_REGISTRY_PORT || 8420
 VERBOSE = process.env.SOMATA_VERBOSE || false
 EXTERNAL = process.env.SOMATA_EXTERNAL || false
-CHECK_INTERVAL = parseInt(process.env.SOMATA_CHECK_INTERVAL) || 9000
-CHECK_TTL = process.env.SOMATA_CHECK_TTL || ((CHECK_INTERVAL / 1000) + 4 + "s")
+HEARTBEAT_INTERVAL = parseInt(process.env.SOMATA_HEARTBEAT_INTERVAL) || 5000
 SERVICE_HOST = process.env.SOMATA_SERVICE_HOST
 
 module.exports = class SomataService extends EventEmitter
@@ -177,39 +176,29 @@ module.exports = class SomataService extends EventEmitter
     # --------------------------------------------------------------------------
 
     register: (cb) ->
-
-        # TODO: Check/Heartbeat Info
-        service_description =
+        service_instance =
             id: @id
+            name: @name
             host: @rpc_binding.host
             port: @rpc_binding.port
+            heartbeat: HEARTBEAT_INTERVAL
 
-        @registry_connection.sendMethod null, 'registerService', [@name, service_description], (err, registered) =>
+        @registry_connection.sendMethod null, 'registerService', [service_instance], (err, registered) =>
             log.s "Registered service `#{ @id }` on #{ @rpc_binding.address }"
-            # TODO: Start the TTL check
-            #@startChecks() if CHECK_INTERVAL > 0
+            @startHeartbeats() if HEARTBEAT_INTERVAL > 0
             cb(null, registered) if cb?
 
-    # TODO: Check for existing unhealthy instance ports to connect as
-    checkBindingPort: (cb) ->
-        @consul_agent.getUnhealthyServiceInstances @name, (err, unhealthy_instances) =>
-            if unhealthy_instances.length
-                @rpc_options.port = (helpers.randomChoice unhealthy_instances).Service.Port
-            else
-                @rpc_options.port = helpers.randomPort()
-            cb()
+    heartbeat: ->
+        @registry_connection.sendMethod null, 'heartbeat', [@id], (err, ok) ->
+            if !ok
+                # TODO: Re-register
+                return
 
-    # TODO
-    startChecks: ->
-        setInterval (=>
-            @consul_agent.checkPass 'service:' + @id
-        ), CHECK_INTERVAL
+    startHeartbeats: ->
+        setInterval @heartbeat.bind(@), HEARTBEAT_INTERVAL
 
-    # TODO
     deregister: (cb) ->
-        return @deregisterExternally(cb) if EXTERNAL
-
-        @consul_agent.deregisterService @id, (err, deregistered) =>
+        @registry_connection.sendMethod null, 'deregisterService', [@name, @id], (err, deregistered) =>
             log.e "[deregister] Deregistered `#{ @id }` from :#{ @rpc_binding.port }"
             cb(null, deregistered) if cb?
 

@@ -154,6 +154,9 @@ Client::getServiceConnection = (service_name, cb) ->
         return
 
     @registry_connection.sendMethod null, 'getService', [service_name], (err, service_instance) =>
+        if err
+            return cb err
+
         service_connection = new Connection port: service_instance.port
         service_connection.service_instance = service_instance
         @service_connections[service_name] = service_connection
