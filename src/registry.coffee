@@ -23,7 +23,9 @@ registerService = (service_instance, cb) ->
 
 deregisterService = (service_name, service_id, cb) ->
     log.w "Deregistering #{service_id}"
-    delete registered[service_name]?[service_id]
+    if service_instance = registered[service_name]?[service_id]
+        delete registered[service_name]?[service_id]
+        registry.publish 'deregister', service_instance
     cb null, service_id
 
 findServices = (cb) ->
@@ -83,6 +85,7 @@ class Registry extends somata.Service
         console.log "Who registers the registry?"
     deregister: (cb) ->
         console.log "Who deregisters the registry?"
+        cb()
 
 registry = new Registry 'somata:registry', registry_methods, registry_options
 

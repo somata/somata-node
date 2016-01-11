@@ -6,7 +6,7 @@ Connection = require './connection'
 {EventEmitter} = require 'events'
 emitters = require './events'
 
-VERBOSE = process.env.SOMATA_VERBOSE || false
+VERBOSE = process.env.SOMATA_VERBOSE || true || false
 KEEPALIVE = process.env.SOMATA_KEEPALIVE || true
 CONNECTION_KEEPALIVE_MS = 6500
 CONNECTION_LINGER_MS = 1500
@@ -17,13 +17,18 @@ class Client
         _.extend @, options
 
         @connection_manager = new EventEmitter
-        @registry_connection = new Connection port: 8420
 
         # Keep track of subscriptions
         @service_subscriptions = {}
 
         # Keep track of existing connections by service name
         @service_connections = {}
+
+        # Connect to registry
+        @registry_connection = new Connection port: 8420
+        @registry_connection.service_instance = {name: 'registry'}
+        @service_connections['registry'] = @registry_connection
+        @subscribe 'registry', 'deregister', @closeConnection.bind(@)
 
         # Deregister when quit
         emitters.exit.onExit (cb) =>
@@ -54,7 +59,9 @@ Client::call = (service_name, method_name, args..., cb) ->
 
     @getServiceConnection service_name, (err, service_connection) =>
         if err
+            # TODO: Some way to retry?
             log.e err
+            cb err
         else
             service_connection.sendMethod message_id, method_name, args, cb
 
@@ -166,29 +173,28 @@ Client::getServiceConnection = (service_name, cb) ->
 
         cb null, service_connection
 
-# TODO
 # Disconnecting
 # ------------------------------------------------------------------------------
 
+# TODO
 # Check for unhealthy services on an interval and kill connections
 
 Client::purgeDeadServiceConnections = ->
     @getUnhealthyServiceInstances (err, unhealthy_instances) =>
         unhealthy_instances.each (instance) =>
             if @service_connections[instance.Service.Service]?
-                @killConnection instance
+                @closeConnection instance
 
-# Kill an existing connection
+# Close an existing connection
 
-Client::killConnection = (instance) ->
-    service_name = instance.Service.Service
-    service_id = instance.Service.ID
-    log.w '[killConnection] ' + service_name if VERBOSE
-    if connection = @service_connections[service_name]?[service_id]
-        delete @service_connections[service_name][service_id]
+Client::closeConnection = (service_instance) ->
+    service_name = service_instance.name
+    log.w '[closeConnection] ' + service_name if VERBOSE
+    if service_connection = @service_connections[service_name]
+        delete @service_connections[service_name]
         doClose = ->
             log.w "Closing connection to #{ service_name }..." if VERBOSE
-            connection.close()
+            service_connection.close()
         setTimeout doClose, CONNECTION_LINGER_MS
 
 module.exports = Client

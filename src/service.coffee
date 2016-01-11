@@ -117,31 +117,31 @@ module.exports = class SomataService extends EventEmitter
     #
     # TODO
 
-    subscriptions_by_type: {}
+    subscriptions_by_event_name: {}
     subscriptions_by_client: {}
 
     handleSubscribe: (client_id, message) ->
-        type = message.type
+        event_name = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join('::')
         log.i "Subscribing <#{ subscription_key }>"
-        @subscriptions_by_type[type] ||= []
-        @subscriptions_by_type[type].push subscription_key
+        @subscriptions_by_event_name[event_name] ||= []
+        @subscriptions_by_event_name[event_name].push subscription_key
         @subscriptions_by_client[client_id] ||= []
         @subscriptions_by_client[client_id].push subscription_key
 
     handleUnsubscribe: (client_id, message) ->
-        type = message.type
+        event_name = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join('::')
         log.w "Unsubscribing <#{ subscription_key }>"
         # TODO: Improve how subscriptions are stored
-        for type, subscription_keys of @subscriptions_by_type
-            @subscriptions_by_type[type] = _.without subscription_keys, subscription_key
+        for event_name, subscription_keys of @subscriptions_by_event_name
+            @subscriptions_by_event_name[event_name] = _.without subscription_keys, subscription_key
         @subscriptions_by_client[client_id] = _.without @subscriptions_by_client[client_id], subscription_key
 
-    publish: (type, event) ->
-        _.map @subscriptions_by_type[type], (subscription_key) =>
+    publish: (event_name, event) ->
+        _.map @subscriptions_by_event_name[event_name], (subscription_key) =>
             [client_id, subscription_id] = subscription_key.split '::'
             @sendEvent client_id, subscription_id, event
 
@@ -151,11 +151,11 @@ module.exports = class SomataService extends EventEmitter
             kind: 'event'
             event: event
 
-    end: (type) ->
-        _.map @subscriptions_by_type[type], (subscription_key) =>
+    end: (event_name) ->
+        _.map @subscriptions_by_event_name[event_name], (subscription_key) =>
             [client_id, subscription_id] = subscription_key.split '::'
             @sendEnd client_id, subscription_id
-        delete @subscriptions_by_type[type]
+        delete @subscriptions_by_event_name[event_name]
 
     sendEnd: (client_id, subscription_id) ->
         @rpc_binding.send client_id,
