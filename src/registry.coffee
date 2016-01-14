@@ -6,7 +6,7 @@ SERVICE_HOST = process.env.SOMATA_SERVICE_HOST
 BUMP_FACTOR = 1.5 # Wiggle room for heartbeats
 DEAD_FACTOR = 10 # Heartbeats to miss before pronounced dead
 
-# Map of ID -> Instance
+# Nested map of Name -> ID -> Instance
 registered = {}
 
 # Map of ID -> Expected heartbeat
@@ -26,7 +26,14 @@ deregisterService = (service_name, service_id, cb) ->
     if service_instance = registered[service_name]?[service_id]
         delete registered[service_name]?[service_id]
         registry.publish 'deregister', service_instance
-    cb null, service_id
+    cb? null, service_id
+
+checkServices = ->
+    for service_name, service_instances of registered
+        for service_id, service_instance of service_instances
+            isHealthy service_instance
+
+setInterval checkServices, 2000
 
 findServices = (cb) ->
     cb null, instances

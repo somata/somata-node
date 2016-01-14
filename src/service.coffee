@@ -12,7 +12,7 @@ REGISTRY_HOST = process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
 REGISTRY_PORT = process.env.SOMATA_REGISTRY_PORT || 8420
 VERBOSE = process.env.SOMATA_VERBOSE || false
 EXTERNAL = process.env.SOMATA_EXTERNAL || false
-HEARTBEAT_INTERVAL = parseInt(process.env.SOMATA_HEARTBEAT_INTERVAL) || 5000
+HEARTBEAT_INTERVAL = parseInt(process.env.SOMATA_HEARTBEAT_INTERVAL) || 2000
 SERVICE_HOST = process.env.SOMATA_SERVICE_HOST
 
 module.exports = class SomataService extends EventEmitter
