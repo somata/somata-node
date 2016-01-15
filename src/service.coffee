@@ -185,17 +185,22 @@ module.exports = class SomataService extends EventEmitter
 
         @registry_connection.sendMethod null, 'registerService', [service_instance], (err, registered) =>
             log.s "Registered service `#{ @id }` on #{ @rpc_binding.address }"
-            @startHeartbeats() if HEARTBEAT_INTERVAL > 0
+            #@startHeartbeats() if HEARTBEAT_INTERVAL > 0
+            @scheduleHeartbeat() if HEARTBEAT_INTERVAL > 0
             cb(null, registered) if cb?
 
     heartbeat: ->
-        @registry_connection.sendMethod null, 'heartbeat', [@id], (err, ok) ->
+        @registry_connection.sendMethod null, 'heartbeat', [@id], (err, ok) =>
             if !ok
                 # TODO: Re-register
-                return
+                @register()
+            else
+                @scheduleHeartbeat()
 
     startHeartbeats: ->
         setInterval @heartbeat.bind(@), HEARTBEAT_INTERVAL
+    scheduleHeartbeat: ->
+        setTimeout @heartbeat.bind(@), HEARTBEAT_INTERVAL
 
     deregister: (cb) ->
         @registry_connection.sendMethod null, 'deregisterService', [@name, @id], (err, deregistered) =>
