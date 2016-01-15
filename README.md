@@ -7,48 +7,41 @@ Micro-service orchestration framework built on [ZeroMQ](http://zeromq.org) and [
 
 Define a service with `new somata.Service(name, methods, [options])`:
 
-```coffee
-somata = require 'somata'
+```js
+somata = require('somata');
 
-# Create a new Somata service named 'hello'
-hello_service = new somata.Service 'hello',
+// Create a new Somata service named 'hello'
+hello_service = new somata.Service('hello', {
 
-    # With a few methods
+    // Exposing a single method `sayHello`
+    sayHello: function (name, cb) {
+        cb(null, 'Hello, ' + name + '!');
+    }
 
-    sayHello: (name, cb) ->
-        cb null, 'Hello, ' + name + '!'
-
-    sayGoodbye: (name, cb) ->
-        cb null, 'Goodbye, cruel ' + name + '!'
+});
 ```
 
 Define a client with `new somata.Client([options])`:
 
-```coffee
-somata = require 'somata'
+```js
+somata = require('somata');
 
-# Create a new Somata client
-hello_client = new somata.Client
+// Create a new Somata client
+hello_client = new somata.Client();
 
-# Execute the 'hello' service's `sayHello` method with the argument 'world' ...
-hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->
-
-    # ... then execute hello.sayGoodbye('world')
-    hello_client.remote 'hello', 'sayGoodbye', 'world', (err, goodbye_response) ->
-
-        # ... then print the responses and leave
-        console.log '[hello.sayHello] response: ' + hello_response
-        console.log '[hello.sayGoodbye] response: ' + goodbye_response
-        process.exit()
+// Call the 'hello' service's `sayHello` method
+hello_client.remote('hello', 'sayHello', 'world', function (err, response) {
+    console.log('Response: ' + response);
+});
 ```
 
 Start the service, then run the client:
 
 ```sh
-$ coffee hello-service.coffee &
+$ node hello-service.js &
 Somata service listening on localhost:15555...
 
-$ coffee hello-client.coffee
+$ node hello-client.js
 Found service hello@localhost:15555
 [hello.sayHello] response: Hello, world!
 ```
