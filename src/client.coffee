@@ -39,17 +39,6 @@ class Client
 
         return @
 
-    registryConnected: ->
-        # TODO: Re-send subscription messages
-        @closeAllConnections()
-        @subscribe 'registry', 'deregister', @closeConnection.bind(@)
-
-    closeAllConnections: ->
-        for service_id, service_connection of @service_connections
-            if service_id != 'registry'
-                delete @service_connections[service_id]
-                service_connection.close()
-
 # Remote method calls and event handling
 # ==============================================================================
 
@@ -192,28 +181,29 @@ Client::getServiceConnection = (service_name, cb) ->
 # Disconnecting
 # ------------------------------------------------------------------------------
 
-# TODO
-# Check for unhealthy services on an interval and kill connections
+Client::registryConnected = ->
+    # TODO: Re-send subscription messages
+    @closeAllConnections()
+    @subscribe 'registry', 'deregister', @closeConnection.bind(@)
 
-Client::purgeDeadServiceConnections = ->
-    @getUnhealthyServiceInstances (err, unhealthy_instances) =>
-        unhealthy_instances.each (instance) =>
-            if @service_connections[instance.Service.Service]?
-                @closeConnection instance
+Client::closeAllConnections = ->
+    for service_id, service_connection of @service_connections
+        if service_id != 'registry'
+            @closeConnection service_connection.service_instance
 
 # Close an existing connection
 
 Client::closeConnection = (service_instance) ->
     service_name = service_instance.name
-    log.w '[closeConnection] ' + service_name if VERBOSE
+    log.w "[closeConnection] #{service_name}" if VERBOSE
     if service_connection = @service_connections[service_name]
         delete @service_connections[service_name]
         doClose = ->
-            log.w "Closing connection to #{ service_name }..." if VERBOSE
+            log.w "[closeConnection] Connection to #{service_name} closed after linger" if VERBOSE
             service_connection.close()
         setTimeout doClose, CONNECTION_LINGER_MS
     else
-        log.w "Already closed?"
+        log.w "[closeConnection] Connection to #{service_name} already closed"
 
 module.exports = Client
 
