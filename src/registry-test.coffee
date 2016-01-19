@@ -1,5 +1,8 @@
 somata = require '.'
 
+N_HELLOS = 1000
+HELLO_INTERVAL = 1000
+
 # Test connecting to registry
 # connection = new somata.Connection port: 8420
 # connection.sendMethod null, 'getService', ['hello'], (err, found) ->
@@ -18,7 +21,7 @@ sendHello = (cb) ->
     client.remote 'hello', 'sayHello', 'world', cb
 
 sendHellos = ->
-    n_hellos = 1
+    n_hellos = N_HELLOS
     n = n_hellos
     start_t = new Date().getTime()
     saidHello = (err, hello) ->
@@ -36,5 +39,5 @@ sendHellos = ->
             console.log "[#{n_hellos}] Done after #{dt} avg #{avg dts}"
     sendHello saidHello
 
-setInterval sendHellos, 5000
+setInterval sendHellos, HELLO_INTERVAL
 sendHellos()

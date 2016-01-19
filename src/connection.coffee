@@ -146,16 +146,15 @@ module.exports = class Connection extends EventEmitter
 
         @last_ping = @send ping_msg, (err, pong) =>
             if pong == 'hello'
-                log.i "New ping response"
+                log.i "[#{@service_instance.id}] New ping response" if VERBOSE
                 @emit 'connect'
 
             else if pong != 'pong'
-                log.e "Ping response not OK"
+                log.e "[#{@service_instance.id}] Ping response invalid" if VERBOSE
                 @emit 'failure'
-                # TODO: Reconnect?
 
             else
-                log.d "[#{@service_instance.id}] Continuing ping"
+                log.d "[#{@service_instance.id}] Continuing ping" if VERBOSE
 
             clearTimeout pingTimeout
             if ping_again
@@ -164,9 +163,6 @@ module.exports = class Connection extends EventEmitter
     pingDidTimeout: ->
         log.e "[#{@service_instance.id}] Ping timed out"
         @emit 'failure'
-        # Try to restart
-        #delete @pending_responses[@last_ping.id]
-        #@sendPing()
 
     close: -> @socket.close()
 

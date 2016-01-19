@@ -6,7 +6,7 @@ Connection = require './connection'
 {EventEmitter} = require 'events'
 emitters = require './events'
 
-VERBOSE = process.env.SOMATA_VERBOSE || true || false
+VERBOSE = process.env.SOMATA_VERBOSE || false
 KEEPALIVE = process.env.SOMATA_KEEPALIVE || true
 CONNECTION_KEEPALIVE_MS = 6500
 CONNECTION_LINGER_MS = 1500
@@ -40,7 +40,17 @@ class Client
         return @
 
     subscribeDeregisters: ->
+        # TODO: Invalidate known connections?
+        # TODO: Resubscribe to them too?
+        console.log "Going to resubscribe to registry"
+        @closeAllConnections()
         @subscribe 'registry', 'deregister', @closeConnection.bind(@)
+
+    closeAllConnections: ->
+        for service_id, service_connection of @service_connections
+            if service_id != 'registry'
+                delete @service_connections[service_id]
+                service_connection.close()
 
 # Remote method calls and event handling
 # ==============================================================================
@@ -84,7 +94,7 @@ Client::subscribe = (service_name, event_name, args..., cb) ->
 
     # Make sure the last argument is a function
     if typeof cb != 'function'
-        log.w "[Client.subscribe] #{ service_name }:#{ event_name } not a function: " + cb
+        log.w "[Client.subscribe] #{ service_name }:#{ event_name } not a function: " + cb if VERBOSE
         args.push cb
         cb = -> log.w "#{ service_name }:#{ event_name } event received with no callback."
 
@@ -105,7 +115,7 @@ Client::subscribe = (service_name, event_name, args..., cb) ->
 
                 # If we've got a connection, send a subscription message with it
                 service = service_connection.service_instance
-                log.i "[Client.subscribe] #{ service.id } : #{ event_name }"
+                log.i "[Client.subscribe] #{ service.id } : #{ event_name }" if VERBOSE
 
                 subscription = service_connection.sendSubscribe subscription_id, event_name, args, cb
                 subscription.service = service_name
@@ -169,11 +179,10 @@ Client::getServiceConnection = (service_name, cb) ->
         if err
             return cb err
 
-        log.i "New connection to #{service_instance.id}"
+        log.i "New connection to #{service_instance.id}" if VERBOSE
         service_connection = new Connection port: service_instance.port
         service_connection.service_instance = service_instance
         service_connection.on 'failure', =>
-            console.log 'seeming failure'
             @closeConnection service_instance
         @service_connections[service_name] = service_connection
 
