@@ -27,9 +27,9 @@ class Client
         # Connect to registry
         @registry_connection = new Connection port: 8420
         @registry_connection.service_instance = {id: 'registry'}
-        @registry_connection.sendPing()
-        @registry_connection.on 'connect', @subscribeDeregisters.bind(@)
         @service_connections['registry'] = @registry_connection
+        @registry_connection.sendPing()
+        @registry_connection.on 'connect', @registryConnected.bind(@)
 
         # Deregister when quit
         emitters.exit.onExit (cb) =>
@@ -39,10 +39,8 @@ class Client
 
         return @
 
-    subscribeDeregisters: ->
-        # TODO: Invalidate known connections?
-        # TODO: Resubscribe to them too?
-        console.log "Going to resubscribe to registry"
+    registryConnected: ->
+        # TODO: Re-send subscription messages
         @closeAllConnections()
         @subscribe 'registry', 'deregister', @closeConnection.bind(@)
 
