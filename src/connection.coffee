@@ -130,6 +130,16 @@ module.exports = class Connection extends EventEmitter
             args: args
         @send subscribe_msg, cb
 
+    resendSubscribe: (subscription) ->
+        existing_cb = @pending_responses[subscription.id]
+        delete @pending_responses[subscription.id]
+        subscribe_msg =
+            id: subscription.id
+            kind: 'subscribe'
+            type: subscription.type
+            args: subscription.args
+        @send subscribe_msg, existing_cb
+
     sendUnsubscribe: (id, event_name) ->
         unsubscribe_msg =
             id: id

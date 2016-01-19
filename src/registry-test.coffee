@@ -1,6 +1,6 @@
 somata = require '.'
 
-N_HELLOS = 1000
+N_HELLOS = 10000
 HELLO_INTERVAL = 1000
 
 # Test connecting to registry

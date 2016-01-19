@@ -107,7 +107,6 @@ class Registry extends somata.Service
 
     handleMethod: (client_id, message) ->
         if message.method == 'registerService'
-            console.log 'registr it'
             registerService client_id, message.args..., (err, response) =>
                 @sendResponse client_id, message.id, response
         else
