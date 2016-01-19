@@ -26,9 +26,10 @@ class Client
 
         # Connect to registry
         @registry_connection = new Connection port: 8420
-        @registry_connection.service_instance = {name: 'registry'}
+        @registry_connection.service_instance = {id: 'registry'}
+        @registry_connection.sendPing()
+        @registry_connection.on 'connect', @subscribeDeregisters.bind(@)
         @service_connections['registry'] = @registry_connection
-        @subscribe 'registry', 'deregister', @closeConnection.bind(@)
 
         # Deregister when quit
         emitters.exit.onExit (cb) =>
@@ -37,6 +38,9 @@ class Client
             cb()
 
         return @
+
+    subscribeDeregisters: ->
+        @subscribe 'registry', 'deregister', @closeConnection.bind(@)
 
 # Remote method calls and event handling
 # ==============================================================================
@@ -118,6 +122,7 @@ Client::subscribe = (service_name, event_name, args..., cb) ->
 
             else
                 # TODO: Exponential backoff
+                log.w 'Going to retry subscription'
                 setTimeout _trySubscribe, 1500
 
     _trySubscribe()
@@ -164,8 +169,12 @@ Client::getServiceConnection = (service_name, cb) ->
         if err
             return cb err
 
+        log.i "New connection to #{service_instance.id}"
         service_connection = new Connection port: service_instance.port
         service_connection.service_instance = service_instance
+        service_connection.on 'failure', =>
+            console.log 'seeming failure'
+            @closeConnection service_instance
         @service_connections[service_name] = service_connection
 
         # TODO: Let other connections know this is connected
@@ -196,6 +205,8 @@ Client::closeConnection = (service_instance) ->
             log.w "Closing connection to #{ service_name }..." if VERBOSE
             service_connection.close()
         setTimeout doClose, CONNECTION_LINGER_MS
+    else
+        log.w "Already closed?"
 
 module.exports = Client
 

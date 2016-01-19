@@ -12,7 +12,6 @@ REGISTRY_HOST = process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
 REGISTRY_PORT = process.env.SOMATA_REGISTRY_PORT || 8420
 VERBOSE = process.env.SOMATA_VERBOSE || false
 EXTERNAL = process.env.SOMATA_EXTERNAL || false
-HEARTBEAT_INTERVAL = parseInt(process.env.SOMATA_HEARTBEAT_INTERVAL) || 2000
 SERVICE_HOST = process.env.SOMATA_SERVICE_HOST
 
 module.exports = class SomataService extends EventEmitter
@@ -29,7 +28,6 @@ module.exports = class SomataService extends EventEmitter
         @rpc_options.host ||= SERVICE_HOST
 
         # Bind and register the service
-        @registry_connection = new Connection port: REGISTRY_PORT
         @bindRPC =>
             @register()
 
@@ -40,6 +38,7 @@ module.exports = class SomataService extends EventEmitter
     bindRPC: (cb) ->
         @rpc_binding = new Binding @rpc_options
         @rpc_binding.on 'bind', cb
+        @rpc_binding.on 'ping', @handlePing.bind(@)
         @rpc_binding.on 'method', @handleMethod.bind(@)
         @rpc_binding.on 'subscribe', @handleSubscribe.bind(@)
         @rpc_binding.on 'unsubscribe', @handleUnsubscribe.bind(@)
@@ -91,8 +90,7 @@ module.exports = class SomataService extends EventEmitter
                 log.e '[ERROR] ' + err
                 console.error e.stack
                 @sendError client_id, message.id, err
-
-        # Method not found for this service
+# Method not found for this service
         else
             log.e '[ERROR] No method ' + message.method
             @sendError client_id, message.id, "No method " + message.method
@@ -112,10 +110,24 @@ module.exports = class SomataService extends EventEmitter
         else
             return @methods[method_name]
 
-    # Handle a subscription request
+    # Handle a ping
     # --------------------------------------------------------------------------
-    #
-    # TODO
+
+    # Map of client_id -> boolean
+    known_pings: {}
+
+    handlePing: (client_id, message) ->
+        log "<#{ client_id }>: #{ util.inspect message, depth: null }" if VERBOSE
+        if @known_pings[client_id]
+            response = 'pong'
+        else
+            @known_pings[client_id] = true
+            response = 'hello'
+        @gotPing? client_id
+        @sendResponse client_id, message.id, response
+
+    # Handle a subscription
+    # --------------------------------------------------------------------------
 
     subscriptions_by_event_name: {}
     subscriptions_by_client: {}
@@ -176,31 +188,21 @@ module.exports = class SomataService extends EventEmitter
     # --------------------------------------------------------------------------
 
     register: (cb) ->
+        @registry_connection = new Connection port: REGISTRY_PORT
+        @registry_connection.service_instance = {id: 'registry'}
+        @registry_connection.on 'connect', @sendRegister.bind(@)
+        @registry_connection.sendPing()
+
+    sendRegister: (cb) ->
         service_instance =
             id: @id
             name: @name
             host: @rpc_binding.host
             port: @rpc_binding.port
-            heartbeat: HEARTBEAT_INTERVAL
 
         @registry_connection.sendMethod null, 'registerService', [service_instance], (err, registered) =>
             log.s "Registered service `#{ @id }` on #{ @rpc_binding.address }"
-            #@startHeartbeats() if HEARTBEAT_INTERVAL > 0
-            @scheduleHeartbeat() if HEARTBEAT_INTERVAL > 0
             cb(null, registered) if cb?
-
-    heartbeat: ->
-        @registry_connection.sendMethod null, 'heartbeat', [@id], (err, ok) =>
-            if !ok
-                # TODO: Re-register
-                @register()
-            else
-                @scheduleHeartbeat()
-
-    startHeartbeats: ->
-        setInterval @heartbeat.bind(@), HEARTBEAT_INTERVAL
-    scheduleHeartbeat: ->
-        setTimeout @heartbeat.bind(@), HEARTBEAT_INTERVAL
 
     deregister: (cb) ->
         @registry_connection.sendMethod null, 'deregisterService', [@name, @id], (err, deregistered) =>
