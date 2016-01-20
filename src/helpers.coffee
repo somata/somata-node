@@ -61,3 +61,10 @@ exports.makeBindingAddress = (protocol, port) ->
 exports.md5 = (s) -> crypto.createHash('md5').update(s).digest('hex')
 exports.hashobj = (o) -> exports.md5 JSON.stringify o
 
+# Descend down an object tree {one: {two: 3}} with a path 'one.two'
+descend = (o, c) ->
+    if c.length == 1
+        return o[c[0]].bind(o)
+    else
+        return descend o[c.shift()], c
+exports.descend = descend

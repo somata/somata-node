@@ -4,26 +4,15 @@ helpers = require './helpers'
 _ = require 'underscore'
 {EventEmitter} = require 'events'
 emitters = require './events'
-ConsulAgent = require './consul-agent'
 Binding = require './binding'
+Connection = require './connection'
 log = helpers.log
 
+REGISTRY_HOST = process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
+REGISTRY_PORT = process.env.SOMATA_REGISTRY_PORT || 8420
 VERBOSE = process.env.SOMATA_VERBOSE || false
 EXTERNAL = process.env.SOMATA_EXTERNAL || false
-CHECK_INTERVAL = parseInt(process.env.SOMATA_CHECK_INTERVAL) || 9000
-CHECK_TTL = process.env.SOMATA_CHECK_TTL || ((CHECK_INTERVAL / 1000) + 4 + "s")
 SERVICE_HOST = process.env.SOMATA_SERVICE_HOST
-
-PREFIX = ''
-if process.env.SOMATA_PREFIX?
-    PREFIX = process.env.SOMATA_PREFIX + ':'
-
-# Descend down an object tree {one: {two: 3}} with a path 'one.two'
-descend = (o, c) ->
-    if c.length == 1
-        return o[c[0]].bind(o)
-    else
-        return descend o[c.shift()], c
 
 module.exports = class SomataService extends EventEmitter
 
@@ -31,18 +20,12 @@ module.exports = class SomataService extends EventEmitter
     # --------------------------------------------------------------------------
 
     constructor: (@name, @methods={}, options={}) ->
-        @name = PREFIX + @name
         @id = @name + '~' + helpers.randomString()
 
         # Determine options
         _.extend @, options
         @rpc_options ||= {}
-        @pub_options ||= {}
-
-        @rpc_options.host = SERVICE_HOST
-
-        # Connect to registry (Consul)
-        @consul_agent = new ConsulAgent
+        @rpc_options.host ||= SERVICE_HOST
 
         # Bind and register the service
         @bindRPC =>
@@ -55,6 +38,7 @@ module.exports = class SomataService extends EventEmitter
     bindRPC: (cb) ->
         @rpc_binding = new Binding @rpc_options
         @rpc_binding.on 'bind', cb
+        @rpc_binding.on 'ping', @handlePing.bind(@)
         @rpc_binding.on 'method', @handleMethod.bind(@)
         @rpc_binding.on 'subscribe', @handleSubscribe.bind(@)
         @rpc_binding.on 'unsubscribe', @handleUnsubscribe.bind(@)
@@ -85,10 +69,10 @@ module.exports = class SomataService extends EventEmitter
         method_name = message.method
         if _method = @getMethod method_name
 
-            # Execute the method with the arguments
             log 'Executing ' + method_name if VERBOSE
-            try
 
+            # Execute the named method with given arguments
+            try
                 _method message.args..., (err, response) =>
                     if err
                         @sendError client_id, message.id, err
@@ -106,11 +90,10 @@ module.exports = class SomataService extends EventEmitter
                 log.e '[ERROR] ' + err
                 console.error e.stack
                 @sendError client_id, message.id, err
-
-        # Method not found for this service
+# Method not found for this service
         else
-            # TODO: Send a failure message to client
-            log.i 'No method ' + message.method
+            log.e '[ERROR] No method ' + message.method
+            @sendError client_id, message.id, "No method " + message.method
 
     # Finding a method from the methods hash
 
@@ -122,41 +105,55 @@ module.exports = class SomataService extends EventEmitter
             return _method
         # Get a deeper level method from @methods
         if (method_context = method_name.split('.')).length > 1
-            return descend @methods, method_context
+            return helpers.descend @methods, method_context
         # Get a method from @methods
         else
             return @methods[method_name]
 
-    # Handle a subscription request
+    # Handle a ping
     # --------------------------------------------------------------------------
-    #
-    # TODO
 
-    subscriptions_by_type: {}
+    # Map of client_id -> boolean
+    known_pings: {}
+
+    handlePing: (client_id, message) ->
+        log "<#{ client_id }>: #{ util.inspect message, depth: null }" if VERBOSE
+        if @known_pings[client_id]
+            response = 'pong'
+        else
+            @known_pings[client_id] = true
+            response = 'hello'
+        @gotPing? client_id
+        @sendResponse client_id, message.id, response
+
+    # Handle a subscription
+    # --------------------------------------------------------------------------
+
+    subscriptions_by_event_name: {}
     subscriptions_by_client: {}
 
     handleSubscribe: (client_id, message) ->
-        type = message.type
+        event_name = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join('::')
         log.i "Subscribing <#{ subscription_key }>"
-        @subscriptions_by_type[type] ||= []
-        @subscriptions_by_type[type].push subscription_key
+        @subscriptions_by_event_name[event_name] ||= []
+        @subscriptions_by_event_name[event_name].push subscription_key
         @subscriptions_by_client[client_id] ||= []
         @subscriptions_by_client[client_id].push subscription_key
 
     handleUnsubscribe: (client_id, message) ->
-        type = message.type
+        event_name = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join('::')
         log.w "Unsubscribing <#{ subscription_key }>"
         # TODO: Improve how subscriptions are stored
-        for type, subscription_keys of @subscriptions_by_type
-            @subscriptions_by_type[type] = _.without subscription_keys, subscription_key
+        for event_name, subscription_keys of @subscriptions_by_event_name
+            @subscriptions_by_event_name[event_name] = _.without subscription_keys, subscription_key
         @subscriptions_by_client[client_id] = _.without @subscriptions_by_client[client_id], subscription_key
 
-    publish: (type, event) ->
-        _.map @subscriptions_by_type[type], (subscription_key) =>
+    publish: (event_name, event) ->
+        _.map @subscriptions_by_event_name[event_name], (subscription_key) =>
             [client_id, subscription_id] = subscription_key.split '::'
             @sendEvent client_id, subscription_id, event
 
@@ -166,11 +163,11 @@ module.exports = class SomataService extends EventEmitter
             kind: 'event'
             event: event
 
-    end: (type) ->
-        _.map @subscriptions_by_type[type], (subscription_key) =>
+    end: (event_name) ->
+        _.map @subscriptions_by_event_name[event_name], (subscription_key) =>
             [client_id, subscription_id] = subscription_key.split '::'
             @sendEnd client_id, subscription_id
-        delete @subscriptions_by_type[type]
+        delete @subscriptions_by_event_name[event_name]
 
     sendEnd: (client_id, subscription_id) ->
         @rpc_binding.send client_id,
@@ -189,75 +186,31 @@ module.exports = class SomataService extends EventEmitter
 
     # Register and deregister the service from the registry
     # --------------------------------------------------------------------------
-    #
-    # TODO: Abstract so that some registry service besides Consul may be used
-
-    serviceTags: ->
-        tags = []
-        tags.push "proto:#{@rpc_binding.proto}"
-        tags.push "host:#{@rpc_binding.host}" if @rpc_binding.proto != 'tcp'
-        tags
 
     register: (cb) ->
-        return @registerExternally(cb) if EXTERNAL
+        @registry_connection = new Connection port: REGISTRY_PORT
+        @registry_connection.service_instance = {id: 'registry'}
+        @registry_connection.sendPing()
+        @registry_connection.on 'connect', @registryConnected.bind(@)
 
-        service_description =
-            Name: @name
-            Id: @id
-            Port: @rpc_binding.port
-            Tags: @serviceTags()
-        if CHECK_INTERVAL > 0
-            service_description.Check =
-                Interval: CHECK_INTERVAL
-                TTL: CHECK_TTL
+    registryConnected: ->
+        # TODO: Consider re-subscriptions from clients
+        @sendRegister()
 
-        # Register the service
-        @consul_agent.registerService service_description, (err, registered) =>
-            # Start the TTL check
-            @startChecks() if CHECK_INTERVAL > 0
+    sendRegister: (cb) ->
+        service_instance =
+            id: @id
+            name: @name
+            host: @rpc_binding.host
+            port: @rpc_binding.port
+            methods: Object.keys @methods
+
+        @registry_connection.sendMethod null, 'registerService', [service_instance], (err, registered) =>
             log.s "Registered service `#{ @id }` on #{ @rpc_binding.address }"
             cb(null, registered) if cb?
 
-    registerExternally: (cb) ->
-        service_description =
-            Node: @id
-            Address: @rpc_binding.host
-            Service:
-                ID: @id
-                Service: @name
-                Port: @rpc_binding.port
-                Tags: ["proto:#{@rpc_binding.proto}"]
-        @consul_agent.registerExternalService service_description, (err, registered) =>
-            log.s "Registered external service `#{ @id }` on #{ @rpc_binding.host }:#{ @rpc_binding.port }"
-            cb(null, registered) if cb?
-
-    # Check for existing unhealthy instance ports to connect as
-    checkBindingPort: (cb) ->
-        @consul_agent.getUnhealthyServiceInstances @name, (err, unhealthy_instances) =>
-            if unhealthy_instances.length
-                @rpc_options.port = (helpers.randomChoice unhealthy_instances).Service.Port
-            else
-                @rpc_options.port = helpers.randomPort()
-            cb()
-
-    startChecks: ->
-        setInterval (=>
-            @consul_agent.checkPass 'service:' + @id
-        ), CHECK_INTERVAL
-
     deregister: (cb) ->
-        return @deregisterExternally(cb) if EXTERNAL
-
-        @consul_agent.deregisterService @id, (err, deregistered) =>
+        @registry_connection.sendMethod null, 'deregisterService', [@name, @id], (err, deregistered) =>
             log.e "[deregister] Deregistered `#{ @id }` from :#{ @rpc_binding.port }"
-            cb(null, deregistered) if cb?
-
-    deregisterExternally: (cb) ->
-        service_description =
-            Node: @name
-            ServiceID: @name
-
-        @consul_agent.deregisterExternalService service_description, (err, deregistered) =>
-            log.e "[deregisterExternally] Deregistered `#{ @id }` from #{ @rpc_binding.host }:#{ @rpc_binding.port }"
             cb(null, deregistered) if cb?
 

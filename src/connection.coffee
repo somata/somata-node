@@ -4,9 +4,10 @@ _ = require 'underscore'
 {EventEmitter} = require 'events'
 {log, randomString} = require './helpers'
 
-VERBOSE =         process.env.SOMATA_VERBOSE || false
-DEFAULT_PROTO =   process.env.SOMATA_PROTO   || 'tcp'
-DEFAULT_CONNECT = process.env.SOMATA_CONNECT || '127.0.0.1'
+VERBOSE =            process.env.SOMATA_VERBOSE || false
+DEFAULT_PROTO =      process.env.SOMATA_PROTO   || 'tcp'
+DEFAULT_CONNECT =    process.env.SOMATA_CONNECT || '127.0.0.1'
+PING_INTERVAL = parseInt(process.env.SOMATA_PING_INTERVAL) || 2000
 
 module.exports = class Connection extends EventEmitter
 
@@ -113,38 +114,65 @@ module.exports = class Connection extends EventEmitter
         @socket.send JSON.stringify message
         return message
 
-    sendMethod: (id, method, args, cb) ->
+    sendMethod: (id, method_name, args, cb) ->
         method_msg =
             id: id
             kind: 'method'
-            method: method
+            method: method_name
             args: args
         @send method_msg, cb
 
-    sendSubscribe: (id, type, args, cb) ->
+    sendSubscribe: (id, event_name, args, cb) ->
         subscribe_msg =
             id: id
             kind: 'subscribe'
-            type: type
+            type: event_name
             args: args
         @send subscribe_msg, cb
 
-    sendUnsubscribe: (id, type) ->
+    resendSubscribe: (subscription) ->
+        existing_cb = @pending_responses[subscription.id]
+        delete @pending_responses[subscription.id]
+        subscribe_msg =
+            id: subscription.id
+            kind: 'subscribe'
+            type: subscription.type
+            args: subscription.args
+        @send subscribe_msg, existing_cb
+
+    sendUnsubscribe: (id, event_name) ->
         unsubscribe_msg =
             id: id
             kind: 'unsubscribe'
-            type: type
+            type: event_name
         @send unsubscribe_msg
         delete @pending_responses[id]
 
+    last_ping: null
+
+    sendPing: (ping_again = true) ->
+        ping_msg = kind: 'ping'
+        pingTimeout = setTimeout @pingDidTimeout.bind(@), PING_INTERVAL / 2
+
+        @last_ping = @send ping_msg, (err, pong) =>
+            if pong == 'hello'
+                log.i "[#{@service_instance.id}] New ping response" if VERBOSE
+                @emit 'connect'
+
+            else if pong != 'pong'
+                log.e "[#{@service_instance.id}] Ping response invalid" if VERBOSE
+                @emit 'failure'
+
+            else
+                log.d "[#{@service_instance.id}] Continuing ping" if VERBOSE
+
+            clearTimeout pingTimeout
+            if ping_again
+                setTimeout @sendPing.bind(@), PING_INTERVAL
+
+    pingDidTimeout: ->
+        log.e "[#{@service_instance.id}] Ping timed out"
+        @emit 'failure'
+
     close: -> @socket.close()
-
-# Class methods
-
-Connection.fromConsulService = (instance, options={}) ->
-    instance_tags = _.object instance.Service.Tags?.map (t) -> t.split(':')
-    proto = instance_tags.proto || DEFAULT_PROTO
-    host = instance_tags.host || instance.Node.Address
-    port = instance.Service.Port
-    return new Connection _.extend options, {proto, host, port}
 
