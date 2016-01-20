@@ -203,6 +203,7 @@ module.exports = class SomataService extends EventEmitter
             name: @name
             host: @rpc_binding.host
             port: @rpc_binding.port
+            methods: Object.keys @methods
 
         @registry_connection.sendMethod null, 'registerService', [service_instance], (err, registered) =>
             log.s "Registered service `#{ @id }` on #{ @rpc_binding.address }"
