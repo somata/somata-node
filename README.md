@@ -1,7 +1,7 @@
 Somata
 =====
 
-Micro-service orchestration framework built on [ZeroMQ](http://zeromq.org) and [Consul](http://www.consul.io).
+Somata is a framework for building microservices. This is the Node.js library, see also [somata-python](https://github.com/somata/somata-python) and [somata-go](https://github.com/somata/somata-go)
 
 # Usage
 
@@ -50,7 +50,7 @@ Found service hello@localhost:15555
 
 ## Dependencies
 
-Install ZeroMQ, Node.js and NPM, plus unzip (if you don't have it).
+Install ZeroMQ, Node.js and NPM.
 
 ```sh
 $ sudo apt-get install libzmq-dev nodejs npm
@@ -59,8 +59,24 @@ $ sudo ln -s /usr/bin/nodejs /usr/bin/node # To fix node-gyp on Ubuntu
 
 ## Somata NPM module
 
-Install Somata itself with [npm](http://npmjs.org):
+Install the Somata library locally, and the [Somata registry](https://github.com/somata/somata-registry) globally:
 
 ```sh
 $ npm install somata
+$ npm install -g somata-registry
+```
+
+# Running
+
+Start up the registry
+
+```sh
+$ somata-registry
+```
+
+Then try the hello example:
+
+```
+$ coffee examples/hello-service.coffee &
+$ coffee examples/hello-client.coffee
 ```
