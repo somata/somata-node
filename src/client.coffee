@@ -153,10 +153,24 @@ Client::unsubscribeAll = ->
 Client::bindRemote = (service_name) ->
     @remote.bind @, service_name
 
+Client::bindRemoteMethods = (service_name) ->
+    service_obj = {}
+    _boundRemote = @remote.bind @, service_name
+    @getServiceInstance service_name, (err, service_instance) ->
+        if service_instance?
+            service_instance.methods.map (method_name) ->
+                service_obj[method_name] = (args...) ->
+                    console.log "calling #{method_name} with", args, _boundRemote
+                    _boundRemote(method_name, args...)
+    service_obj
+
 # Connections and connection managment
 # ==============================================================================
 
 # Query for and connect to a service
+
+Client::getServiceInstance = (service_name, cb) ->
+    @registry_connection.sendMethod null, 'getService', [service_name], cb
 
 Client::getServiceConnection = (service_name, cb) ->
     service_name = service_name
@@ -165,12 +179,11 @@ Client::getServiceConnection = (service_name, cb) ->
         cb null, service_connection
         return
 
-    @registry_connection.sendMethod null, 'getService', [service_name], (err, service_instance) =>
-        if err
-            return cb err
+    @getServiceInstance service_name, (err, service_instance) =>
+        if err then return cb err
 
         log.i "New connection to #{service_instance.id}" if VERBOSE
-        service_connection = new Connection port: service_instance.port
+        service_connection = new Connection port: service_instance.port, host: service_instance.host
         service_connection.service_instance = service_instance
         service_connection.on 'failure', =>
             @closeConnection service_instance
