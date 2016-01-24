@@ -187,8 +187,8 @@ module.exports = class SomataService extends EventEmitter
     # Register and deregister the service from the registry
     # --------------------------------------------------------------------------
 
-    register: (cb) ->
-        @registry_connection = new Connection port: REGISTRY_PORT
+    register: ->
+        @registry_connection = new Connection port: REGISTRY_PORT, host: REGISTRY_HOST
         @registry_connection.service_instance = {id: 'registry'}
         @registry_connection.sendPing()
         @registry_connection.on 'connect', @registryConnected.bind(@)

@@ -6,7 +6,7 @@ _ = require 'underscore'
 
 VERBOSE =            process.env.SOMATA_VERBOSE || false
 DEFAULT_PROTO =      process.env.SOMATA_PROTO   || 'tcp'
-DEFAULT_CONNECT =    process.env.SOMATA_CONNECT || '127.0.0.1'
+DEFAULT_CONNECT =    process.env.SOMATA_CONNECT || process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
 PING_INTERVAL = parseInt(process.env.SOMATA_PING_INTERVAL) || 2000
 
 module.exports = class Connection extends EventEmitter
@@ -36,6 +36,8 @@ module.exports = class Connection extends EventEmitter
 
         @proto ||= DEFAULT_PROTO
         @host ||= DEFAULT_CONNECT
+        if @host == '0.0.0.0'
+            @host = DEFAULT_CONNECT
         #@address = @proto + '://' + @host + ':' + @port
         @address = @proto + '://' + @host
         @address += ':' + @port if @proto != 'ipc'
