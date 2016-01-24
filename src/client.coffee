@@ -19,6 +19,7 @@ class Client
         @events = new EventEmitter
 
         # Keep track of subscriptions
+        # subscription_id -> {name, instance, connection}
         @service_subscriptions = {}
 
         # Keep track of existing connections by service name
@@ -26,10 +27,10 @@ class Client
 
         # Connect to registry
         @registry_connection = new Connection port: 8420
-        @registry_connection.service_instance = {id: 'registry'}
+        @registry_connection.service_instance = {id: 'registry', name: 'registry'}
         @service_connections['registry'] = @registry_connection
         @registry_connection.sendPing()
-        @registry_connection.on 'connect', @registryConnected.bind(@)
+        @registry_connection.once 'connect', @registryConnected.bind(@)
 
         # Deregister when quit
         emitters.exit.onExit (cb) =>
@@ -96,8 +97,6 @@ Client::subscribe = (service_name, event_name, args..., cb) ->
         # Look for the service
         me.getServiceConnection service_name, (err, service_connection) ->
 
-            # TODO: Move retrying into getServiceConnection?
-
             if service_connection?
 
                 # If we've got a connection, send a subscription message with it
@@ -113,7 +112,7 @@ Client::subscribe = (service_name, event_name, args..., cb) ->
                 # TODO
                 # Attempt to resubscribe if the service is deregistered but the
                 # subscription has not already been ended
-                subscription.connection.on 'reconnect', ->
+                subscription.connection.once 'reconnect', ->
                     if subscription = me.service_subscriptions[subscription_id]
                         log.i "[Client.subscribe.reconnect] Going to resubscribe #{subscription_id}" if VERBOSE
                         delete subscription.connection.pending_responses[subscription_id]
@@ -173,7 +172,6 @@ Client::getServiceInstance = (service_name, cb) ->
     @registry_connection.sendMethod null, 'getService', [service_name], cb
 
 Client::getServiceConnection = (service_name, cb) ->
-    service_name = service_name
 
     if service_connection = @service_connections[service_name]
         cb null, service_connection
@@ -198,10 +196,12 @@ Client::getServiceConnection = (service_name, cb) ->
 # ------------------------------------------------------------------------------
 
 Client::registryConnected = ->
-    # TODO: Re-send subscription messages
+    @subscribe 'registry', 'deregister', @deregistered.bind(@)
+    @registry_connection.on 'connect', @registryReconnected.bind(@)
+
+Client:: registryReconnected = ->
     @closeAllConnections()
     @resubscribeAll()
-    @subscribe 'registry', 'deregister', @deregistered.bind(@)
 
 Client::closeAllConnections = ->
     for service_id, service_connection of @service_connections
@@ -216,16 +216,12 @@ Client::deregistered = (service_instance) ->
 Client::resubscribe = (service_id) ->
     for subscription_id, subscription of @service_subscriptions
         if subscription.instance.id == service_id
-            #delete @service_subscriptions[subscription_id]
             subscription.connection.emit('reconnect')
-            #subscription.connection.resendSubscribe subscription
 
 Client::resubscribeAll = ->
     for subscription_id, subscription of @service_subscriptions
         service_id = subscription.instance.id
-        service_name = subscription.name
-        if service_name != 'registry'
-            @resubscribe service_id
+        @resubscribe service_id
 
 # Close an existing connection
 
