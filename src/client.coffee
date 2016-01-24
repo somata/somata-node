@@ -152,14 +152,13 @@ Client::unsubscribeAll = ->
 Client::bindRemote = (service_name) ->
     @remote.bind @, service_name
 
-Client::bindRemoteMethods = (service_name) ->
+Client::bindService = (service_name) ->
     service_obj = {}
     _boundRemote = @remote.bind @, service_name
     @getServiceInstance service_name, (err, service_instance) ->
         if service_instance?
             service_instance.methods.map (method_name) ->
                 service_obj[method_name] = (args...) ->
-                    console.log "calling #{method_name} with", args, _boundRemote
                     _boundRemote(method_name, args...)
     service_obj
 
@@ -231,7 +230,7 @@ Client::closeConnection = (service_instance) ->
     service_connection = @service_connections[service_name]
     delete @service_connections[service_name]
     doClose = ->
-        log.w "[closeConnection] Connection to #{service_name} closed after linger" if VERBOSE
+        log.d "[closeConnection] Connection to #{service_name} closed after #{CONNECTION_LINGER_MS/1000}s" if VERBOSE
         service_connection.close()
     setTimeout doClose, CONNECTION_LINGER_MS
 

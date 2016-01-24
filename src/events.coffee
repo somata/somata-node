@@ -17,6 +17,9 @@ exit.on 'exit', exitWrapped
 process.on 'SIGINT', ->
     exit.emit 'exit'
 
+process.on 'SIGTERM', ->
+    exit.emit 'exit'
+
 module.exports = {
     exit
 }
