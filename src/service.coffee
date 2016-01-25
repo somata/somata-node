@@ -190,8 +190,8 @@ module.exports = class SomataService extends EventEmitter
     register: ->
         @registry_connection = new Connection port: REGISTRY_PORT, host: REGISTRY_HOST
         @registry_connection.service_instance = {id: 'registry'}
-        @registry_connection.sendPing()
         @registry_connection.on 'connect', @registryConnected.bind(@)
+        @registry_connection.sendPing()
 
     registryConnected: ->
         # TODO: Consider re-subscriptions from clients
