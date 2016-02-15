@@ -6,6 +6,8 @@ Connection = require './connection'
 {EventEmitter} = require 'events'
 emitters = require './events'
 
+REGISTRY_HOST = process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
+REGISTRY_PORT = process.env.SOMATA_REGISTRY_PORT || 8420
 VERBOSE = process.env.SOMATA_VERBOSE || false
 KEEPALIVE = process.env.SOMATA_KEEPALIVE || true
 CONNECTION_KEEPALIVE_MS = 6500
@@ -26,7 +28,7 @@ class Client
         @service_connections = {}
 
         # Connect to registry
-        @registry_connection = new Connection port: 8420
+        @registry_connection = new Connection host: REGISTRY_HOST, port: REGISTRY_PORT
         @registry_connection.service_instance = {id: 'registry', name: 'registry'}
         @service_connections['registry'] = @registry_connection
         @registry_connection.sendPing()
