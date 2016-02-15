@@ -87,7 +87,7 @@ module.exports = class Connection extends EventEmitter
                 delete @pending_responses[message.id]
 
         else
-            log.w '[handleMessage] No pending response for ' + message.id, @pending_responses
+            log.w '[handleMessage] No pending response for ' + message.id if VERBOSE
 
     # Send a message to the connected-to service
     # --------------------------------------------------------------------------
