@@ -1,8 +1,8 @@
-os = require 'os'
 util = require 'util'
 helpers = require './helpers'
 _ = require 'underscore'
 {EventEmitter} = require 'events'
+usage = require 'usage'
 emitters = require './events'
 Binding = require './binding'
 Connection = require './connection'
@@ -100,7 +100,7 @@ module.exports = class SomataService extends EventEmitter
     getMethod: (method_name) ->
         # Look for builtins, having method names starting with a `_`
         if (method_name[0] == '_')
-            method_name = method_name.slice(1)
+            #method_name = method_name.slice(1)
             _method = @[method_name]
             return _method
         # Get a deeper level method from @methods
@@ -177,12 +177,10 @@ module.exports = class SomataService extends EventEmitter
     # Handle a status request
     # --------------------------------------------------------------------------
 
-    handleStatus: (cb) ->
-        cb null,
-            health: 'ok'
-            uptime: process.uptime()
-            memory: process.memoryUsage()
-            load: os.loadavg()
+    _status: (cb) ->
+        usage.lookup process.pid, {keepHistory: true}, (err, {memory, cpu}) ->
+            uptime = process.uptime()
+            cb null, {memory, cpu, uptime}
 
     # Register and deregister the service from the registry
     # --------------------------------------------------------------------------
