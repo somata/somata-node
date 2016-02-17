@@ -1,6 +1,6 @@
 {
     "name": "somata",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "description": "Microservices framework for Node.js",
     "homepage": "http://github.com/somata/somata-node",
     "repository": {
@@ -29,6 +29,7 @@
         "moment": "2.x.x",
         "request": "2.x.x",
         "underscore": "1.x.x",
+        "usage": "0.7.x",
         "zmq": "2.x.x"
     }
 }
