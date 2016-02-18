@@ -10,7 +10,7 @@ log = helpers.log
 
 REGISTRY_HOST = process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
 REGISTRY_PORT = process.env.SOMATA_REGISTRY_PORT || 8420
-VERBOSE = process.env.SOMATA_VERBOSE || false
+VERBOSE = parseInt(process.env.SOMATA_VERBOSE) || 0
 EXTERNAL = process.env.SOMATA_EXTERNAL || false
 SERVICE_HOST = process.env.SOMATA_SERVICE_HOST
 
@@ -69,7 +69,7 @@ module.exports = class SomataService extends EventEmitter
         method_name = message.method
         if _method = @getMethod method_name
 
-            log 'Executing ' + method_name if VERBOSE
+            log 'Executing ' + method_name if VERBOSE > 1
 
             # Execute the named method with given arguments
             try
@@ -117,7 +117,7 @@ module.exports = class SomataService extends EventEmitter
     known_pings: {}
 
     handlePing: (client_id, message) ->
-        log "<#{ client_id }>: #{ util.inspect message, depth: null }" if VERBOSE
+        log "<#{ client_id }>: #{ util.inspect message, depth: null }" if VERBOSE > 1
         if @known_pings[client_id]
             response = 'pong'
         else
