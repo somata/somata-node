@@ -287,6 +287,18 @@ HelloService 'sayHello', 'world', (err, response) ->
 
 This looks less convenient when used in a trivial example, but is nice when repeatedly referencing a Service.
 
+You can also bind down to a method name:
+
+```
+somata = require 'somata'
+
+client = new somata.Client
+sayHello = client.bindRemote 'hello', 'sayHello'
+
+sayHello 'world', (err, response) ->
+    console.log "Response: #{response}"
+```
+
 ### Process management with PM2
 
 PM2 makes it easy to keep a bunch of services running in the background. If an error causes one of your services to die, PM2 will attempt to restart it (giving up after a rapid succession of failures).

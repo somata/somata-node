@@ -149,10 +149,10 @@ Client::unsubscribeAll = ->
         @getServiceConnection sub.instance.name, (err, service_connection) ->
             service_connection.sendUnsubscribe sub_id, sub.type
 
-# Helper for binding specific services
+# Helper for binding specific services / methods
 
-Client::bindRemote = (service_name) ->
-    @remote.bind @, service_name
+Client::bindRemote = (bound_args...) ->
+    @remote.bind @, bound_args...
 
 Client::bindService = (service_name) ->
     service_obj = {}
