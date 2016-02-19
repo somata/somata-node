@@ -65,7 +65,7 @@ new somata.Service 'hello',
         cb null, "Hello #{name}!"
 ```
 
-The CoffeeScript syntax takes some getting used to – the Javascript equivalent is:
+The CoffeeScript syntax takes some getting used to -- the Javascript equivalent is:
 
 ```javascript
 somata = require('somata');
@@ -122,7 +122,7 @@ A Client has two important methods: `remote` and `subscribe`. We'll get into sub
 
 When this `client.remote 'hello', ...` is called, it first asks the Registry for a list of all Services named "hello", creates a connection to one of the Service instances, and sends a message to the Service specifying the method `sayHello` and the arguments. When the Service responds, the callback will be called. Try it:
 
-```coffee
+```bash
 $ coffee hello-client.coffee
 Response: Hello world!
 ```
