@@ -65,7 +65,7 @@ new somata.Service 'hello',
         cb null, "Hello #{name}!"
 ```
 
-The CoffeeScript syntax takes some getting used to -- the Javascript equivalent is:
+The CoffeeScript syntax takes some getting used to &mdash; the Javascript equivalent is:
 
 ```javascript
 somata = require('somata');
