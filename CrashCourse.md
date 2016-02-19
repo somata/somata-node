@@ -6,7 +6,7 @@
 
 Install Node.js and CoffeeScript (`-g` is for installing global binaries):
 
-```
+```bash
 $ sudo apt-get install nodejs npm
 $ sudo ln -s /usr/bin/nodejs /usr/bin/node # An Ubuntu annoyance
 $ sudo npm install -g coffee-script
@@ -14,7 +14,7 @@ $ sudo npm install -g coffee-script
 
 Test that CoffeeScript is working. You can learn more about CoffeeScript syntax from the many examples at http://coffeescript.org/
 
-```
+```bash
 $ coffee
 coffee> test = 21
 21
@@ -26,7 +26,7 @@ coffee> double test
 
 Install ZeroMQ, the Somata Registry, Somata REPL, and Somata library:
 
-```
+```bash
 $ sudo apt-get install libzmq-dev
 $ sudo npm install -g somata-registry
 $ sudo npm install -g somata-repl
@@ -37,14 +37,14 @@ $ npm install somata
 
 Test the Somata Registry:
 
-```
+```bash
 $ somata-registry
 [didBind] Socket mbed2kjj bound to tcp://0.0.0.0:8420...
 ```
 
 You could keep this running in one terminal window and open another. Or better yet, kill it, install PM2 (a process manager for Node.js), and start it with pm2 to run in the background.
 
-```
+```bash
 $ sudo npm install -g pm2
 $ pm2 start somata-registry
 $ pm2 logs
@@ -57,7 +57,7 @@ $ pm2 logs
 
 Create a new file `hello-Service.coffee` to define a basic Service. The two important arguments for a new Service are the name "hello" and method hash `{sayHello: [Function]}` that the Service will expose.
 
-```
+```coffee
 somata = require 'somata'
 
 new somata.Service 'hello',
@@ -67,7 +67,7 @@ new somata.Service 'hello',
 
 The CoffeeScript syntax takes some getting used to – the Javascript equivalent is:
 
-```
+```javascript
 somata = require('somata');
 
 new somata.Service('hello', {
@@ -83,7 +83,7 @@ A new Service will start listening for connections, connect itself to the regist
 
 See if it works: 
 
-```
+```bash
 $ coffee hello-Service.coffee
 [didBind] Socket sj4x536c bound to tcp://0.0.0.0:20052...
 Registered Service `hello~6cz3je2x` on tcp://0.0.0.0:20052
@@ -93,7 +93,7 @@ Looks good. The Service assigns itself a random ID ("6cz3je2x") to identify that
 
 Keep that running – in another window, in the background (`coffee hello-Service.coffee &`) or using pm2 (`pm2 start hello-Service.coffee`). Now test your Service with the Somata REPL:
 
-```
+```bash
 $ somata-repl
 #| hello.sayHello "Jack"
 'Hello Jack!'
@@ -108,7 +108,7 @@ The REPL allows you to call Service methods using a simple Bash-like syntax. It 
 
 Now create `hello-client.coffee` to use a Client to call your Service from code.
 
-```
+```coffee
 somata = require 'somata'
 
 client = new somata.Client
@@ -122,7 +122,7 @@ A Client has two important methods: `remote` and `subscribe`. We'll get into sub
 
 When this `client.remote 'hello', ...` is called, it first asks the Registry for a list of all Services named "hello", creates a connection to one of the Service instances, and sends a message to the Service specifying the method `sayHello` and the arguments. When the Service responds, the callback will be called. Try it:
 
-```
+```coffee
 $ coffee hello-client.coffee
 Response: Hello world!
 ```
@@ -133,7 +133,7 @@ The base case has been covered: A single Client calling a single Service. For re
 
 Create another Service in `hello-yeller-Service.coffee`
 
-```
+```coffee
 somata = require 'somata'
 
 client = new somata.Client
@@ -146,7 +146,7 @@ new somata.Service 'hello:yeller',
 
 Now we have a Service that uses a Client to call another Service. The `hello:yeller.yellHello` method will call `hello.sayHello`, and return the response of that after uppercasing it. Try it:
 
-```
+```bash
 $ somata-repl
 #| hello.sayHello everyone
 'Hello everyone!'
@@ -163,7 +163,7 @@ So far we've only looked at the Client &rarr; Service RPC half of Somata, where 
 
 Create a new Service in `fizzbuzz-service.coffee` that will publish some events at an interval:
 
-```
+```coffee
 somata = require 'somata'
 
 fizzbuzz_service = new somata.Service 'fizzbuzz', {}
@@ -185,7 +185,7 @@ This Service will publish one of two events (named `fizz` and `buzz`) when the c
 
 Create `fizzbuzz-client.coffee` to subscribe to the `fizz` and `buzz` events and print them as they arrive:
 
-```
+```coffee
 somata = require 'somata'
 
 client = new somata.Client
@@ -205,7 +205,7 @@ Calling `subscribe` sends a message to the Service specifying the event we want 
 
 Once the client is running you should see something like this:
 
-```
+```bash
 $ coffee fizzbuzz-client.coffee
 Fizz: 57
 Fizz: 60
@@ -224,7 +224,7 @@ Buzz: 70
 
 You don't have to define methods directly inside the methods hash like the simpler examples show. Often it's easier (especially with methods that might call each other) to define the methods in the root of your code, and include them in the method hash afterwards:
 
-```
+```coffee
 somata = require 'somata'
 
 plus = (a, b, cb) -> cb null, a + b
@@ -242,13 +242,13 @@ new somata.Service 'math', math_methods
 
 A CoffeeScript trick with `{}` makes the most common case (where method names exposed by the Service are the same as the actual function names) even easier:
 
-```
+```coffee
 math_methods = {plus, times, squared}
 ```
 
 For more intuition, try this in the CoffeeScript REPL:
 
-```
+```bash
 $ coffee
 coffee> a = 5
 5
@@ -275,7 +275,7 @@ There are some common naming conventions used across projects, many obvious:
 
 Often you'll be making many calls to the same named Service, so the Client offers a convenience method `bindRemote`:
 
-```
+```coffee
 somata = require 'somata'
 
 client = new somata.Client
@@ -289,7 +289,7 @@ This looks less convenient when used in a trivial example, but is nice when repe
 
 You can also bind down to a method name:
 
-```
+```coffee
 somata = require 'somata'
 
 client = new somata.Client
