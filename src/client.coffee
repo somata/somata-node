@@ -202,7 +202,7 @@ Client::registryConnected = ->
     @subscribe 'registry', 'deregister', @deregistered.bind(@)
     @registry_connection.on 'connect', @registryReconnected.bind(@)
 
-Client:: registryReconnected = ->
+Client::registryReconnected = ->
     @closeAllConnections()
     @resubscribeAll()
 
