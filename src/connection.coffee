@@ -154,7 +154,7 @@ module.exports = class Connection extends EventEmitter
 
     sendPing: (ping_again = true) ->
         ping_msg = kind: 'ping'
-        pingTimeout = setTimeout @pingDidTimeout.bind(@), PING_INTERVAL / 2
+        pingTimeout = setTimeout @pingDidTimeout.bind(@), PING_INTERVAL
 
         @last_ping = @send ping_msg, (err, pong) =>
             if pong == 'hello'

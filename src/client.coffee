@@ -101,10 +101,9 @@ Client::subscribe = (service_name, event_name, args..., cb) ->
         # Look for the service
         me.getServiceConnection service_name, (err, service_connection) ->
 
-            if !service_connection.last_ping
-                service_connection.sendPing()
-
             if service_connection?
+                if !service_connection.last_ping
+                    service_connection.sendPing()
 
                 # If we've got a connection, send a subscription message with it
                 {service_instance} = service_connection
