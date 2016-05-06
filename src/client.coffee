@@ -33,6 +33,7 @@ class Client
             port: options.registry_port || REGISTRY_PORT
         @registry_connection.service_instance = {id: 'registry', name: 'registry'}
         @service_connections['registry'] = @registry_connection
+        @registry_connection.sendPing()
         @registry_connection.once 'connect', @registryConnected.bind(@)
 
         # Deregister when quit
