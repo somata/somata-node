@@ -31,7 +31,7 @@ class Client
         @registry_connection = new Connection
             host: options.registry_host || REGISTRY_HOST
             port: options.registry_port || REGISTRY_PORT
-        @registry_connection.service_instance = {id: 'registry', name: 'registry'}
+        @registry_connection.service_instance = {id: 'registry', name: 'registry', host: @registry_connection.host}
         @service_connections['registry'] = @registry_connection
         @registry_connection.sendPing()
         @registry_connection.once 'connect', @registryConnected.bind(@)
@@ -102,7 +102,7 @@ Client::subscribe = (service_name, event_name, args..., cb) ->
         me.getServiceConnection service_name, (err, service_connection) ->
 
             if service_connection?
-                if !service_connection.last_ping and service_connection.service_instance.heartbeat > 0
+                if !service_connection.last_ping and service_connection.service_instance.heartbeat != 0
                     service_connection.sendPing()
 
                 # If we've got a connection, send a subscription message with it
@@ -186,7 +186,10 @@ Client::getServiceConnection = (service_name, cb) ->
         if err then return cb err
 
         log.i "New connection to #{service_instance.id}" if VERBOSE
-        service_connection = new Connection port: service_instance.port, host: service_instance.host
+        {port, host} = service_instance
+        if !host? or host == '0.0.0.0'
+            host = @registry_connection.host
+        service_connection = new Connection {port, host}
         service_connection.service_instance = service_instance
         service_connection.on 'failure', =>
             @closeConnection service_instance
