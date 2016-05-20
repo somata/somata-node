@@ -192,7 +192,10 @@ Client::getServiceConnection = (service_name, cb) ->
         service_connection = new Connection {port, host}
         service_connection.service_instance = service_instance
         service_connection.on 'failure', =>
-            @closeConnection service_instance
+            if (service_connection = @service_connections[service_name])?.id == service_instance
+                log.w "[connection.on failure] #{service_instance.id}" if VERBOSE
+                @closeConnection service_instance
+                @resubscribe service_instance.id
         @service_connections[service_name] = service_connection
 
         # TODO: Let other connections know this is connected
@@ -217,6 +220,7 @@ Client::closeAllConnections = ->
             @closeConnection service_connection.service_instance
 
 Client::deregistered = (service_instance) ->
+    log.w "[deregistered] #{service_instance.id}" if VERBOSE
     if service_connection = @service_connections[service_instance.name]
         @closeConnection service_instance
         @resubscribe service_instance.id
@@ -235,13 +239,13 @@ Client::resubscribeAll = ->
 
 Client::closeConnection = (service_instance) ->
     service_name = service_instance.name
-    log.w "[closeConnection] #{service_name}" if VERBOSE
-    service_connection = @service_connections[service_name]
-    delete @service_connections[service_name]
-    doClose = ->
-        log.d "[closeConnection] Connection to #{service_name} closed after #{CONNECTION_LINGER_MS/1000}s" if VERBOSE
-        service_connection.close()
-    setTimeout doClose, CONNECTION_LINGER_MS
+    log.w "[closeConnection] #{service_instance.id}" if VERBOSE
+    if service_connection = @service_connections[service_name]
+        delete @service_connections[service_name]
+        doClose = ->
+            log.d "[closeConnection] Connection to #{service_instance.id} closed after #{CONNECTION_LINGER_MS/1000}s" if VERBOSE
+            service_connection.close()
+        setTimeout doClose, CONNECTION_LINGER_MS
 
 module.exports = Client
 
