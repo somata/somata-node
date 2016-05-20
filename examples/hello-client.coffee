@@ -7,7 +7,7 @@ log = somata.helpers.log
 hello_client = new somata.Client
 
 # Execute the 'hello' service's `sayHello` method with the argument 'world' ...
-hello_client.remote 'hello:forward', 'sayHello', 'world', (err, hello_response) ->
+hello_client.remote 'hello', 'sayHello', 'world', (err, hello_response) ->
     log.s '[hello.sayHello] response: ' + hello_response
 
     # ... then execute hello.sayGoodbye('world')
