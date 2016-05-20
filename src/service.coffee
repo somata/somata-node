@@ -13,6 +13,7 @@ REGISTRY_PORT = process.env.SOMATA_REGISTRY_PORT || 8420
 VERBOSE = parseInt(process.env.SOMATA_VERBOSE) || 0
 EXTERNAL = process.env.SOMATA_EXTERNAL || false
 SERVICE_HOST = process.env.SOMATA_SERVICE_HOST
+SERVICE_PORT = process.env.SOMATA_SERVICE_PORT
 
 module.exports = class SomataService extends EventEmitter
 
@@ -26,6 +27,7 @@ module.exports = class SomataService extends EventEmitter
         _.extend @, options
         @rpc_options ||= {}
         @rpc_options.host ||= SERVICE_HOST
+        @rpc_options.port ||= SERVICE_PORT
 
         # Bind and register the service
         @bindRPC =>
