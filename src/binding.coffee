@@ -5,7 +5,7 @@ util = require 'util'
 
 VERBOSE =       process.env.SOMATA_VERBOSE || false
 DEFAULT_PROTO = process.env.SOMATA_PROTO   || 'tcp'
-DEFAULT_HOST =  process.env.SOMATA_HOST    || '0.0.0.0'
+DEFAULT_HOST =  process.env.SOMATA_HOST    || '127.0.0.1'
 
 module.exports = class Binding extends EventEmitter
 
@@ -39,14 +39,17 @@ module.exports = class Binding extends EventEmitter
             @socket = zmq.socket 'router'
             @socket.bindSync @address
             @didBind()
+
         catch err
             log.e "[tryBinding] Failed to bind on #{ @address }", err
+
             if n_retried < 5
                 log.w "[tryBinding] Retrying..."
                 @port = randomPort()
                 setTimeout =>
                     @tryBinding(n_retried+1)
                 , 1000
+
             else
                 log.e "[tryBinding] Retried too many times."
                 process.exit()
