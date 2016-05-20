@@ -8,7 +8,7 @@ emitters = require './events'
 
 REGISTRY_HOST = process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
 REGISTRY_PORT = process.env.SOMATA_REGISTRY_PORT || 8420
-VERBOSE = process.env.SOMATA_VERBOSE || false
+VERBOSE = parseInt process.env.SOMATA_VERBOSE || 0
 KEEPALIVE = process.env.SOMATA_KEEPALIVE || true
 CONNECTION_KEEPALIVE_MS = 6500
 CONNECTION_LINGER_MS = 1500

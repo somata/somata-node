@@ -4,7 +4,7 @@ _ = require 'underscore'
 {EventEmitter} = require 'events'
 {log, randomString} = require './helpers'
 
-VERBOSE =            process.env.SOMATA_VERBOSE || false
+VERBOSE =            parseInt process.env.SOMATA_VERBOSE || 0
 DEFAULT_PROTO =      process.env.SOMATA_PROTO   || 'tcp'
 DEFAULT_CONNECT =    process.env.SOMATA_CONNECT || process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
 PING_INTERVAL = parseInt(process.env.SOMATA_PING_INTERVAL) || 2000
@@ -65,7 +65,7 @@ module.exports = class Connection extends EventEmitter
     # callback the message.
 
     handleMessage: (message) ->
-        log "[connection.handleMessage] #{ util.inspect(message).slice(0,100).replace(/\s+/g, ' ') }" if VERBOSE
+        log "[connection.handleMessage] #{ util.inspect(message).slice(0,100).replace(/\s+/g, ' ') }" if VERBOSE > 1
         if on_response = @pending_responses[message.id]
             # Clear timeout if it exists
             if on_response.timeout?
@@ -166,14 +166,14 @@ module.exports = class Connection extends EventEmitter
                 @emit 'failure'
 
             else
-                log.d "[#{@service_instance.id}] Continuing ping" if VERBOSE
+                log.d "[#{@service_instance.id}] Continuing ping" if VERBOSE > 1
 
             clearTimeout pingTimeout
             if ping_again
                 setTimeout @sendPing.bind(@), PING_INTERVAL
 
     pingDidTimeout: ->
-        log.e "[#{@service_instance.id}] Ping timed out"
+        log.e "[#{@service_instance.id} #{@service_instance.host}] Ping timed out"
         @emit 'failure'
 
     close: -> @socket.close()
