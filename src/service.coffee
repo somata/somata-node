@@ -8,10 +8,11 @@ Binding = require './binding'
 Connection = require './connection'
 log = helpers.log
 
+VERBOSE = parseInt process.env.SOMATA_VERBOSE || 0
+REGISTRY_PROTO = process.env.SOMATA_REGISTRY_PROTO || 'tcp'
 REGISTRY_HOST = process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
 REGISTRY_PORT = process.env.SOMATA_REGISTRY_PORT || 8420
-VERBOSE = parseInt(process.env.SOMATA_VERBOSE) || 0
-EXTERNAL = process.env.SOMATA_EXTERNAL || false
+SERVICE_PROTO = process.env.SOMATA_SERVICE_PROTO
 SERVICE_HOST = process.env.SOMATA_SERVICE_HOST
 SERVICE_PORT = process.env.SOMATA_SERVICE_PORT
 
@@ -26,6 +27,7 @@ module.exports = class SomataService extends EventEmitter
         # Determine options
         _.extend @, options
         @rpc_options ||= {}
+        @rpc_options.proto ||= SERVICE_PROTO
         @rpc_options.host ||= SERVICE_HOST
         @rpc_options.port ||= SERVICE_PORT
 
@@ -188,7 +190,10 @@ module.exports = class SomataService extends EventEmitter
     # --------------------------------------------------------------------------
 
     register: ->
-        @registry_connection = new Connection port: REGISTRY_PORT, host: REGISTRY_HOST
+        @registry_connection = new Connection
+            proto: REGISTRY_PROTO
+            port: REGISTRY_PORT
+            host: REGISTRY_HOST
         @registry_connection.service_instance = {id: 'registry'}
         @registry_connection.on 'connect', @registryConnected.bind(@)
         @registry_connection.sendPing()
@@ -201,6 +206,7 @@ module.exports = class SomataService extends EventEmitter
         service_instance =
             id: @id
             name: @name
+            proto: @rpc_binding.proto
             host: @rpc_binding.host
             port: @rpc_binding.port
             methods: Object.keys @methods

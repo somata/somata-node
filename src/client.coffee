@@ -6,6 +6,7 @@ Connection = require './connection'
 {EventEmitter} = require 'events'
 emitters = require './events'
 
+REGISTRY_PROTO = process.env.SOMATA_REGISTRY_PROTO || 'tcp'
 REGISTRY_HOST = process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
 REGISTRY_PORT = process.env.SOMATA_REGISTRY_PORT || 8420
 VERBOSE = parseInt process.env.SOMATA_VERBOSE || 0
@@ -29,6 +30,7 @@ class Client
 
         # Connect to registry
         @registry_connection = new Connection
+            proto: options.registry_proto || REGISTRY_PROTO
             host: options.registry_host || REGISTRY_HOST
             port: options.registry_port || REGISTRY_PORT
         @registry_connection.service_instance = {id: 'registry', name: 'registry', host: @registry_connection.host}
@@ -186,10 +188,10 @@ Client::getServiceConnection = (service_name, cb) ->
         if err then return cb err
 
         log.i "New connection to #{service_instance.id}" if VERBOSE
-        {port, host} = service_instance
+        {proto, port, host} = service_instance
         if !host? or host == '0.0.0.0'
             host = @registry_connection.host
-        service_connection = new Connection {port, host}
+        service_connection = new Connection {proto, port, host}
         service_connection.service_instance = service_instance
         service_connection.on 'failure', =>
             if (service_connection = @service_connections[service_name])?.id == service_instance
