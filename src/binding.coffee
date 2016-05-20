@@ -5,7 +5,6 @@ util = require 'util'
 
 VERBOSE =       process.env.SOMATA_VERBOSE || false
 DEFAULT_PROTO = process.env.SOMATA_PROTO   || 'tcp'
-DEFAULT_BIND =  process.env.SOMATA_BIND    || '0.0.0.0'
 DEFAULT_HOST =  process.env.SOMATA_HOST    || '0.0.0.0'
 
 module.exports = class Binding extends EventEmitter
@@ -15,7 +14,6 @@ module.exports = class Binding extends EventEmitter
         @id = @id || randomString()
 
         @proto = options.proto || DEFAULT_PROTO
-        @bind ||= DEFAULT_BIND
         @host = options.host || DEFAULT_HOST
         @port = options.port || randomPort() if @proto != 'ipc'
 
