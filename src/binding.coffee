@@ -1,7 +1,7 @@
 zmq = require 'zmq'
 util = require 'util'
 {EventEmitter} = require 'events'
-{randomPort, randomString, log} = require './helpers'
+{makeAddress, randomPort, randomString, log} = require './helpers'
 
 VERBOSE =       process.env.SOMATA_VERBOSE || false
 DEFAULT_PROTO = process.env.SOMATA_PROTO   || 'tcp'
@@ -29,13 +29,9 @@ module.exports = class Binding extends EventEmitter
         @socket.on 'message', (client_id, message_json) =>
             @handleMessage client_id.toString(), JSON.parse message_json
 
-    makeAddress: ->
-        @address = @proto + '://' + @host
-        @address += ':' + @port if @proto != 'ipc'
-
     tryBinding: (n_retried=0) ->
         try
-            @makeAddress()
+            @address = makeAddress @proto, @host, @port
             log.d "[tryBinding] Attempting to bind on #{ @address }..." if VERBOSE
             @socket = zmq.socket 'router'
             @socket.bindSync @address

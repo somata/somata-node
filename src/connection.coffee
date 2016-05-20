@@ -2,11 +2,11 @@ zmq = require 'zmq'
 util = require 'util'
 _ = require 'underscore'
 {EventEmitter} = require 'events'
-{log, randomString} = require './helpers'
+{log, randomString, makeAddress} = require './helpers'
 
-VERBOSE =            parseInt process.env.SOMATA_VERBOSE || 0
-DEFAULT_PROTO =      process.env.SOMATA_PROTO   || 'tcp'
-DEFAULT_CONNECT =    process.env.SOMATA_CONNECT || process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
+VERBOSE = parseInt process.env.SOMATA_VERBOSE || 0
+DEFAULT_PROTO = process.env.SOMATA_PROTO || 'tcp'
+DEFAULT_CONNECT = process.env.SOMATA_CONNECT || process.env.SOMATA_REGISTRY_HOST || '127.0.0.1'
 PING_INTERVAL = parseInt(process.env.SOMATA_PING_INTERVAL) || 2000
 
 module.exports = class Connection extends EventEmitter
@@ -38,9 +38,8 @@ module.exports = class Connection extends EventEmitter
         @host ||= DEFAULT_CONNECT
         if @host == '0.0.0.0'
             @host = DEFAULT_CONNECT
-        #@address = @proto + '://' + @host + ':' + @port
-        @address = @proto + '://' + @host
-        @address += ':' + @port if @proto != 'ipc'
+
+        @address = makeAddress @proto, @host, @port
 
         @connect()
 
