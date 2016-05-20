@@ -11,11 +11,12 @@ module.exports = class Binding extends EventEmitter
 
     constructor: (options={}) ->
         log.d '[Binding.constructor]', options if VERBOSE
-        @id = @id || randomString()
 
+        @id = randomString()
         @proto = options.proto || DEFAULT_PROTO
         @host = options.host || DEFAULT_HOST
         @port = options.port || randomPort() if @proto != 'ipc'
+        @should_retry = !options.port? # Retry with random ports if not specified
 
         @tryBinding()
 
@@ -43,7 +44,10 @@ module.exports = class Binding extends EventEmitter
         catch err
             log.e "[tryBinding] Failed to bind on #{ @address }", err
 
-            if n_retried < 5
+            if !@should_retry
+                process.exit()
+
+            else if n_retried < 5
                 log.w "[tryBinding] Retrying..."
                 @port = randomPort()
                 setTimeout =>
