@@ -107,12 +107,15 @@ module.exports = class SomataService extends EventEmitter
             #method_name = method_name.slice(1)
             _method = @[method_name]
             return _method
-        # Get a deeper level method from @methods
-        if (method_context = method_name.split('.')).length > 1
-            return helpers.descend @methods, method_context
-        # Get a method from @methods
+        if typeof @methods == 'function'
+            return @methods(method_name)
         else
-            return @methods[method_name]
+            # Get a deeper level method from @methods
+            if (method_context = method_name.split('.')).length > 1
+                return helpers.descend @methods, method_context
+            # Get a method from @methods
+            else
+                return @methods[method_name]
 
     # Handle a ping
     # --------------------------------------------------------------------------

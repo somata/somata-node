@@ -22,7 +22,7 @@ module.exports = class Binding extends EventEmitter
 
     didBind: ->
         # Announce binding
-        log.i "[didBind] Socket #{ @id } bound to #{ @address }..."
+        log.i "[didBind] Socket #{ @id } bound to #{ @address }..." if VERBOSE
         process.nextTick => @emit 'bind'
 
         # Start handling messages
