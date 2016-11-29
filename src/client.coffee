@@ -97,42 +97,43 @@ Client::subscribe = (service_name, event_name, args..., cb) ->
     subscription_id += "(#{args.join(', ')})" if args.length
     subscription_id += randomString(4)
 
-    me = @
-    _trySubscribe = ->
-
-        # Look for the service
-        me.getServiceConnection service_name, (err, service_connection) ->
-
-            if service_connection?
-                if !service_connection.last_ping and service_connection.service_instance.heartbeat != 0
-                    service_connection.sendPing()
-
-                # If we've got a connection, send a subscription message with it
-                {service_instance} = service_connection
-                log.i "[Client.subscribe] #{service_instance.id} : #{event_name}" if VERBOSE
-
-                subscription = service_connection.sendSubscribe subscription_id, event_name, args, cb
-                subscription.name = service_name
-                subscription.instance = service_instance
-                subscription.connection = service_connection
-                me.service_subscriptions[subscription_id] = subscription
-
-                # TODO
-                # Attempt to resubscribe if the service is deregistered but the
-                # subscription has not already been ended
-                subscription.connection.once 'reconnect', ->
-                    if subscription = me.service_subscriptions[subscription_id]
-                        log.i "[Client.subscribe.reconnect] Going to resubscribe #{subscription_id}" if VERBOSE
-                        delete subscription.connection.pending_responses[subscription_id]
-                        _trySubscribe()
-
-            else
-                # TODO: Exponential backoff
-                log.w "[Client.subscribe] Going to retry subscription to #{service_name}" if VERBOSE
-                setTimeout _trySubscribe, 1500
-
-    _trySubscribe()
+    @_subscribe subscription_id, service_name, event_name, args..., cb
     return subscription_id
+
+Client::_subscribe = (subscription_id, service_name, event_name, args..., cb) ->
+    _subscribe = => @_subscribe(subscription_id, service_name, event_name, args..., cb)
+
+    # Look for the service
+    me = @
+    me.getServiceConnection service_name, (err, service_connection) ->
+
+        if service_connection? and !service_connection.closing
+            if !service_connection.last_ping and service_connection.service_instance.heartbeat != 0
+                service_connection.sendPing()
+
+            # If we've got a connection, send a subscription message with it
+            {service_instance} = service_connection
+            log.i "[Client.subscribe] #{service_instance.id} : #{event_name}" if VERBOSE
+
+            subscription = service_connection.sendSubscribe subscription_id, event_name, args, cb
+            subscription.name = service_name
+            subscription.instance = service_instance
+            subscription.connection = service_connection
+            me.service_subscriptions[subscription_id] = subscription
+
+            # TODO
+            # Attempt to resubscribe if the service is deregistered but the
+            # subscription has not already been ended
+            subscription.connection.once 'reconnect', ->
+                if subscription = me.service_subscriptions[subscription_id]
+                    log.i "[Client.subscribe.reconnect] Going to resubscribe #{subscription_id}" if VERBOSE
+                    delete subscription.connection.pending_responses[subscription_id]
+                    _subscribe()
+
+        else
+            # TODO: Exponential backoff
+            log.w "[Client.subscribe] Going to retry subscription to #{service_name}" if VERBOSE
+            setTimeout _subscribe, 1500
 
 # Client::on is an alias for Client::subscribe
 
