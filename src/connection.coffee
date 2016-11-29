@@ -110,6 +110,7 @@ module.exports = class Connection extends EventEmitter
 
     send: (message, on_response) ->
         message.id ||= randomString 16
+        message.service ||= @service_instance.name
         if on_response?
             @setPending message.id, on_response
         @socket.send JSON.stringify message
@@ -152,12 +153,13 @@ module.exports = class Connection extends EventEmitter
     last_ping: null
 
     sendPing: (ping_again = true) ->
-        ping_msg = kind: 'ping'
-        pingTimeout = setTimeout @pingDidTimeout.bind(@), PING_INTERVAL
+        clearTimeout @pingTimeout
+        @pingTimeout = setTimeout @pingDidTimeout.bind(@), PING_INTERVAL
 
-        @last_ping = @send ping_msg, (err, pong) =>
+        @last_ping = @send {kind: 'ping'}, (err, pong) =>
             if pong == 'hello'
                 log.i "[#{@service_instance.id}] New ping response" if VERBOSE
+                @timed_out = false
                 @emit 'connect'
 
             else if pong != 'pong'
@@ -167,13 +169,16 @@ module.exports = class Connection extends EventEmitter
             else
                 log.d "[#{@service_instance.id}] Continuing ping" if VERBOSE > 1
 
-            clearTimeout pingTimeout
+            clearTimeout @pingTimeout
             if ping_again
                 setTimeout @sendPing.bind(@), PING_INTERVAL
 
     pingDidTimeout: ->
         log.e "[#{@service_instance.id} #{@service_instance.host}] Ping timed out"
+        @timed_out = true
         @emit 'failure'
 
-    close: -> @socket.close()
+    close: ->
+        clearTimeout @pingTimeout
+        @socket.close()
 

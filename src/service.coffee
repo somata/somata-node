@@ -222,7 +222,14 @@ module.exports = class SomataService extends EventEmitter
             cb(null, registered) if cb?
 
     deregister: (cb) ->
-        @registry_connection.sendMethod null, 'deregisterService', [@name, @id], (err, deregistered) =>
-            log.e "[deregister] Deregistered `#{ @id }` from :#{ @rpc_binding.port }"
-            cb(null, deregistered) if cb?
+        if @registry_connection.timed_out
+            log.e "[deregister] Registry is dead"
+            cb() if cb?
+        else
+            @registry_connection.sendMethod null, 'deregisterService', [@name, @id], (err, deregistered) =>
+                log.e "[deregister] Deregistered `#{ @id }` from :#{ @rpc_binding.port }"
+                cb(null, deregistered) if cb?
+            @registry_connection.on 'failure', ->
+                log.e "[deregister] Registry is dead"
+                cb() if cb?
 

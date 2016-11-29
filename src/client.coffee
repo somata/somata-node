@@ -214,7 +214,7 @@ Client::registryConnected = ->
     @registry_connection.on 'connect', @registryReconnected.bind(@)
 
 Client::registryReconnected = ->
-    @closeAllConnections()
+    # @closeAllConnections()
     @resubscribeAll()
 
 Client::closeAllConnections = ->
@@ -229,14 +229,28 @@ Client::deregistered = (service_instance) ->
         @resubscribe service_instance.id
 
 Client::resubscribe = (service_id) ->
+    needs_reconnect = false
     for subscription_id, subscription of @service_subscriptions
         if subscription.instance.id == service_id
-            subscription.connection.emit('reconnect')
+            needs_reconnect = true
+            break
+    if needs_reconnect
+        service_name = service_id.split('~')[0]
+        service_connection = @service_connections[service_name]
+        # if service_connection? and !service_connection.closing
+        if service_connection?
+            # console.log 'what if i dont reconnect'
+            service_connection.emit('reconnect')
 
 Client::resubscribeAll = ->
+    need_reconnect = {}
     for subscription_id, subscription of @service_subscriptions
         service_id = subscription.instance.id
-        @resubscribe service_id
+        need_reconnect[service_id] = true
+    for service_id, needs_reconnect of need_reconnect
+        service_name = service_id.split('~')[0]
+        service_connection = @service_connections[service_name]
+        service_connection.emit('reconnect')
 
 # Close an existing connection
 
@@ -244,8 +258,9 @@ Client::closeConnection = (service_instance) ->
     service_name = service_instance.name
     log.w "[closeConnection] #{service_instance.id}" if VERBOSE
     if service_connection = @service_connections[service_name]
-        delete @service_connections[service_name]
-        doClose = ->
+        service_connection.closing = true
+        doClose = =>
+            delete @service_connections[service_name]
             log.d "[closeConnection] Connection to #{service_instance.id} closed after #{CONNECTION_LINGER_MS/1000}s" if VERBOSE
             service_connection.close()
         setTimeout doClose, CONNECTION_LINGER_MS
