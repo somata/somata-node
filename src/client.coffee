@@ -88,13 +88,13 @@ Client::subscribe = (service_name, event_name, args..., cb) ->
 
     # Make sure the last argument is a function
     if typeof cb != 'function'
-        log.w "[Client.subscribe] #{ service_name }:#{ event_name } not a function: " + cb if VERBOSE
+        log.w "[Client.subscribe] #{service_name}:#{event_name} not a function: " + cb if VERBOSE
         args.push cb
-        cb = -> log.w "#{ service_name }:#{ event_name } event received with no callback."
+        cb = -> log.w "#{service_name}:#{event_name} event received with no callback."
 
     # Create a subscription ID to be returned
-    subscription_id = "#{ service_name }:#{ event_name }"
-    subscription_id += "(#{ args.join(', ') })" if args.length
+    subscription_id = "#{service_name}:#{ event_name }"
+    subscription_id += "(#{args.join(', ')})" if args.length
     subscription_id += randomString(4)
 
     me = @

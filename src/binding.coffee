@@ -58,6 +58,6 @@ module.exports = class Binding extends EventEmitter
         @socket.send [ client_id, JSON.stringify message ]
 
     handleMessage: (client_id, message) ->
-        log "[binding.handleMessage] <#{ client_id }> #{ util.inspect(message).slice(0,300).replace(/\s+/g, ' ') }" if VERBOSE
+        log "[binding.handleMessage] <#{ client_id }> #{ util.inspect(message).slice(0,300).replace(/\s+/g, ' ') }" if VERBOSE > 1
         @emit message.kind, client_id, message
 

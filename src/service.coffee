@@ -59,6 +59,8 @@ module.exports = class SomataService extends EventEmitter
             response: response
 
     sendError: (client_id, message_id, error) ->
+        if error.toString?
+            error = error.toString()
         @rpc_binding.send client_id,
             id: message_id
             kind: 'error'
@@ -143,7 +145,7 @@ module.exports = class SomataService extends EventEmitter
         event_name = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join('::')
-        log.i "Subscribing <#{ subscription_key }>"
+        log.i "[Service.handleSubscribe] Subscribing #{client_id} <#{ subscription_key }>"
         @subscriptions_by_event_name[event_name] ||= []
         @subscriptions_by_event_name[event_name].push subscription_key
         @subscriptions_by_client[client_id] ||= []
@@ -153,7 +155,7 @@ module.exports = class SomataService extends EventEmitter
         event_name = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join('::')
-        log.w "Unsubscribing <#{ subscription_key }>"
+        log.w "[Service.handleUnsubscribe] Unsubscribing <#{ subscription_key }>"
         # TODO: Improve how subscriptions are stored
         for event_name, subscription_keys of @subscriptions_by_event_name
             @subscriptions_by_event_name[event_name] = _.without subscription_keys, subscription_key
@@ -162,9 +164,10 @@ module.exports = class SomataService extends EventEmitter
     publish: (event_name, event) ->
         _.map @subscriptions_by_event_name[event_name], (subscription_key) =>
             [client_id, subscription_id] = subscription_key.split '::'
-            @sendEvent client_id, subscription_id, event
+            @sendEvent client_id, subscription_id, event, event_name
 
-    sendEvent: (client_id, subscription_id, event) ->
+    sendEvent: (client_id, subscription_id, event, event_name) ->
+        log.d "[sendEvent] <#{client_id}> #{subscription_id}" if VERBOSE
         @rpc_binding.send client_id,
             id: subscription_id
             kind: 'event'
@@ -197,7 +200,7 @@ module.exports = class SomataService extends EventEmitter
             proto: REGISTRY_PROTO
             port: REGISTRY_PORT
             host: REGISTRY_HOST
-        @registry_connection.service_instance = {id: 'registry'}
+        @registry_connection.service_instance = {id: 'registry', name: 'registry'}
         @registry_connection.on 'connect', @registryConnected.bind(@)
         @registry_connection.sendPing()
 
