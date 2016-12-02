@@ -31,28 +31,32 @@ module.exports = class Binding extends EventEmitter
             @handleMessage client_id.toString(), JSON.parse message_json
 
         # Handling pings
-        @on 'ping', (client_id, ping) =>
-            if @known_pings[ping.id]
-                response = 'pong'
-            else
-                @known_pings[ping.id] = true
-                response = 'hello'
-            @send client_id, {
-                id: ping.id
-                kind: 'response'
-                response
-            }
+        @on 'ping', @handlePing.bind(@)
+        @on 'subscribe', @handleSubscribe.bind(@)
+        @on 'unsubscribe', @handleUnsubscribe.bind(@)
 
-        # Handling subscriptions
-        @on 'subscribe', (client_id, subscription) =>
-            log.d '[Binding.on subscribe]', client_id, subscription
-            subscription.client_id = client_id
-            @subscriptions[subscription.type] ||= {}
-            @subscriptions[subscription.type][subscription.id] = subscription
+    handlePing: (client_id, ping) ->
+        if @known_pings[ping.id]
+            response = 'pong'
+        else
+            @known_pings[ping.id] = true
+            response = 'hello'
 
-        @on 'unsubscribe', (client_id, unsubscription) =>
-            log.d '[Binding.on unsubscribe]', client_id, unsubscription
-            delete @subscriptions[unsubscription.type]?[unsubscription.id]
+        @send client_id, {
+            id: ping.id
+            kind: 'response'
+            response
+        }
+
+    handleSubscribe: (client_id, subscription) ->
+        log.d '[Binding.on subscribe]', client_id, subscription
+        subscription.client_id = client_id
+        @subscriptions[subscription.type] ||= {}
+        @subscriptions[subscription.type][subscription.id] = subscription
+
+    handleUnsubscribe: (client_id, unsubscription) ->
+        log.d '[Binding.on unsubscribe]', client_id, unsubscription
+        delete @subscriptions[unsubscription.type]?[unsubscription.id]
 
     tryBinding: (n_retried=0) ->
         try
