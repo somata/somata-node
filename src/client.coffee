@@ -34,13 +34,18 @@ class Client extends EventEmitter
         @registry_connection.once 'connect', @connectedToRegistry.bind(@)
         @registry_connection.on 'reconnect', @findServices.bind(@)
 
+        @register_subscription = new Subscription {service: 'registry', type: 'register'}
+        @register_subscription.on 'register', @registeredService.bind(@)
+
+        @deregister_subscription = new Subscription {service: 'registry', type: 'deregister'}
+        @deregister_subscription.on 'deregister', @deregisteredService.bind(@)
+
     connectedToRegistry: ->
-        console.log '[connected to registry]', helpers.summarizeConnection @registry_connection
         @connected_to_registry = true
-        register_subscription = new Subscription {service: 'registry', type: 'register', cb: @registeredService.bind(@)}
-        deregister_subscription = new Subscription {service: 'registry', type: 'deregister', cb: @deregisteredService.bind(@)}
-        register_subscription.subscribe @registry_connection, {keepalive: true}
-        deregister_subscription.subscribe @registry_connection, {keepalive: true}
+
+        @register_subscription.subscribe @registry_connection, {keepalive: true}
+        @deregister_subscription.subscribe @registry_connection, {keepalive: true}
+
         @findServices()
 
     findServices: ->
@@ -48,13 +53,18 @@ class Client extends EventEmitter
             @known_services = services
 
     registeredService: (new_service) ->
-        log.d '[Client.registry_connection.register]', new_service
+        log.d '[Client.registry_connection.register]', new_service if VERBOSE > 1
         @known_services[new_service.name] ||= {}
         @known_services[new_service.name][new_service.id] = new_service
 
     deregisteredService: (old_service) ->
-        log.d '[Client.registry_connection.deregister]', old_service
+        log.d '[Client.registry_connection.deregister]', old_service if VERBOSE > 1
         delete @known_services[old_service.name]?[old_service.id]
+
+        if subscriptions = @service_subscriptions[old_service.name]
+            subscriptions.filter((s) -> s.connection.id == old_service.id).forEach (subscription) =>
+                subscription.unsubscribe()
+                @resubscribe(subscription)
 
     # Main API of remote and subscribe
 
@@ -67,14 +77,22 @@ class Client extends EventEmitter
             cb 'No connection'
 
     subscribe: (service, type, args..., cb) ->
+        if arguments.length == 2 # (options, cb) ->
+            options = arguments[0]
+            cb = arguments[1]
+            {id, service, type, args} = options
+        else
+            id = helpers.randomString()
+
         if !@connected_to_registry
-            setTimeout (=> @subscribe service, type, args..., cb), 500
+            setTimeout (=> @subscribe {id, service, type, args}, cb), 500
             return
 
         log.d '[subscribe]', service, type, args
         if connection = @getConnection(service)
-            s = new Subscription {service, type, args, cb}
+            s = new Subscription {id, service, type, args, cb}
             s.subscribe connection
+            s.on type, cb
             @service_subscriptions[service] ||= []
             @service_subscriptions[service].push s
         else
@@ -105,7 +123,7 @@ class Client extends EventEmitter
             return connection
         else
             if service = @getService(service_name)
-                connection = new Connection {host: service.host, port: service.port}
+                connection = new Connection {id: service.id, host: service.host, port: service.port}
                 @service_connections[service_name] = connection
                 connection.on 'timeout', =>
                     log.e "[connection.on timeout] #{service_name}"

@@ -131,9 +131,10 @@ module.exports = class SomataService extends EventEmitter
         subscription_key = [client_id, subscription_id].join('::')
         log.i "[Service.handleSubscribe] Subscribing #{client_id} <#{subscription_key}>"
         @subscriptions_by_event_name[event_name] ||= []
-        @subscriptions_by_event_name[event_name].push subscription_key
-        @subscriptions_by_client[client_id] ||= []
-        @subscriptions_by_client[client_id].push subscription_key
+        if subscription_key not in @subscriptions_by_event_name[event_name]
+            @subscriptions_by_event_name[event_name].push subscription_key
+            @subscriptions_by_client[client_id] ||= []
+            @subscriptions_by_client[client_id].push subscription_key
 
     handleUnsubscribe: (client_id, message) ->
         event_name = message.type

@@ -9,10 +9,16 @@ class Subscription extends EventEmitter
         Object.assign @, options
         @id ||= @type + '~' + helpers.randomString()
 
+        @handleEvent = @_handleEvent.bind(@)
+
+    _handleEvent: (message) ->
+        log.d '[Subscription.handleEvent]', arguments if VERBOSE > 2
+        @emit @type, message
+
     subscribe: (connection, options={}) ->
         @connection = connection
         log.i "[Subscription.subscribe] #{@id} <#{@connection.id}>"
-        @connection.sendSubscribe @id, @service, @type, @args, @cb
+        @connection.sendSubscribe @id, @service, @type, @args, @handleEvent
 
         @resubscribe = @_resubscribe.bind(@)
 
@@ -20,11 +26,11 @@ class Subscription extends EventEmitter
             @connection.on 'reconnect', @resubscribe
 
     _resubscribe: ->
-        log.i "[Subscription.resubscribe] #{@id} <#{@connection.id}>"
-        @connection.sendSubscribe @id, @service, @type, @args, @cb
+        log.i "[Subscription.resubscribe] #{@id} <#{@connection.id}>" if VERBOSE
+        @connection.sendSubscribe @id, @service, @type, @args, @handleEvent
 
     unsubscribe: ->
-        log.w "[Subscription.unsubscribe] <#{@connection.id}> #{@id}"
+        log.w "[Subscription.unsubscribe] <#{@connection.id}> #{@id}" if VERBOSE
         delete @connection.pending_responses[@id]
         @connection.removeListener 'reconnect', @resubscribe
         @connection.sendUnsubscribe @id, @type
