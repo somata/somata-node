@@ -2,7 +2,9 @@ zmq = require 'zmq'
 util = require 'util'
 _ = require 'underscore'
 {EventEmitter} = require 'events'
-{log, randomString, makeAddress} = require './helpers'
+Subscription = require './subscription'
+helpers = require './helpers'
+{log} = helpers
 
 VERBOSE = parseInt process.env.SOMATA_VERBOSE || 0
 DEFAULT_PROTO = process.env.SOMATA_PROTO || 'tcp'
@@ -29,19 +31,21 @@ module.exports = class Connection extends EventEmitter
     # `host`, and `port`, and connects to that address.
 
     constructor: (options={}) ->
-        log.d '[Connection.constructor]', options if VERBOSE
-        _.extend @, options
+        Object.assign @, options
 
-        @id ||= randomString()
+        @id ||= helpers.randomString()
 
         @proto ||= DEFAULT_PROTO
         @host ||= DEFAULT_CONNECT
+
+        # TODO: Host overwrite no longer necessary with bridges(?)
         if @host == '0.0.0.0'
             @host = DEFAULT_CONNECT
 
-        @address = makeAddress @proto, @host, @port
+        @address = helpers.makeAddress @proto, @host, @port
 
         @connect()
+        @sendPing()
 
     # Create and connect the connection socket
     # --------------------------------------------------------------------------
@@ -55,7 +59,7 @@ module.exports = class Connection extends EventEmitter
         @socket.on 'message', (message_json) =>
             @handleMessage JSON.parse message_json
 
-        log "Socket #{ @id } connected to #{ @address }..." if VERBOSE
+        log.i "[Connection.connect] #{helpers.summarizeConnection(@)} connected to #{@address}..." if VERBOSE
 
     # Handle a message from the connected-to service
     # --------------------------------------------------------------------------
@@ -64,7 +68,7 @@ module.exports = class Connection extends EventEmitter
     # callback the message.
 
     handleMessage: (message) ->
-        log "[connection.handleMessage] #{ util.inspect(message).slice(0,100).replace(/\s+/g, ' ') }" if VERBOSE > 1
+        log.d "[Connection.handleMessage] #{helpers.summarizeConnection(@)} #{helpers.summarizeMessage(message)}" if VERBOSE > 1
         if on_response = @pending_responses[message.id]
             # Clear timeout if it exists
             if on_response.timeout?
@@ -108,9 +112,12 @@ module.exports = class Connection extends EventEmitter
         # Save the response in the pending hash
         @pending_responses[message_id] = on_response
 
+    # Constructing and sending messages
+    # --------------------------------------------------------------------------
+
     send: (message, on_response) ->
-        message.id ||= randomString 16
-        message.service ||= @service_instance.name
+        message.id ||= helpers.randomString 16
+        message.service ||= @service_instance?.name
         if on_response?
             @setPending message.id, on_response
         @socket.send JSON.stringify message
@@ -124,11 +131,11 @@ module.exports = class Connection extends EventEmitter
             args: args
         @send method_msg, cb
 
-    sendSubscribe: (id, event_name, args, cb) ->
+    sendSubscribe: (id, type, args, cb) ->
         subscribe_msg =
             id: id
             kind: 'subscribe'
-            type: event_name
+            type: type
             args: args
         @send subscribe_msg, cb
 
@@ -142,43 +149,52 @@ module.exports = class Connection extends EventEmitter
             args: subscription.args
         @send subscribe_msg, existing_cb
 
-    sendUnsubscribe: (id, event_name) ->
+    sendUnsubscribe: (id, type) ->
         unsubscribe_msg =
             id: id
             kind: 'unsubscribe'
-            type: event_name
+            type: type
         @send unsubscribe_msg
         delete @pending_responses[id]
 
+    # Ping logic, to keep track of the connected-to binding
+    # --------------------------------------------------------------------------
+
     last_ping: null
+    last_pong: null
 
-    sendPing: (ping_again = true) ->
-        clearTimeout @pingTimeout
-        @pingTimeout = setTimeout @pingDidTimeout.bind(@), PING_INTERVAL
+    sendPing: ->
+        clearTimeout @pingTimeoutTimeout
+        @pingTimeoutTimeout = setTimeout @pingDidTimeout.bind(@), PING_INTERVAL
 
-        @last_ping = @send {kind: 'ping'}, (err, pong) =>
-            if pong == 'hello'
-                log.i "[#{@service_instance.id}] New ping response" if VERBOSE
-                @timed_out = false
-                @emit 'connect'
+        ping = {id: @last_ping?.id, kind: 'ping'}
+        @last_ping = @send ping, @handlePing
 
-            else if pong != 'pong'
-                log.e "[#{@service_instance.id}] Ping response invalid" if VERBOSE
-                @emit 'failure'
+    handlePing: (err, pong) =>
+        return if @closed
 
+        if pong == 'hello'
+            log.i "[Connection.handlePing] #{helpers.summarizeConnection(@)} New ping response" if VERBOSE
+            if @last_pong?
+                @emit 'reconnect'
             else
-                log.d "[#{@service_instance.id}] Continuing ping" if VERBOSE > 1
+                @emit 'connect'
+            @last_pong = new Date()
 
-            clearTimeout @pingTimeout
-            if ping_again
-                setTimeout @sendPing.bind(@), PING_INTERVAL
+        else
+            log.d "[Connection.handlePing] #{helpers.summarizeConnection(@)} Continuing ping" if VERBOSE > 1
+
+        clearTimeout @pingTimeoutTimeout
+        @nextPingTimeout = setTimeout @sendPing.bind(@), PING_INTERVAL
 
     pingDidTimeout: ->
-        log.e "[#{@service_instance.id} #{@service_instance.host}] Ping timed out"
-        @timed_out = true
-        @emit 'failure'
+        log.e "[Connection.pingDidTimeout] #{helpers.summarizeConnection(@)}"
+        @nextPingTimeout = setTimeout @sendPing.bind(@), PING_INTERVAL * 2
+        @emit 'timeout'
 
     close: ->
-        clearTimeout @pingTimeout
+        clearTimeout @nextPingTimeout
+        clearTimeout @pingTimeoutTimeout
+        @closed = true
         @socket.close()
 
