@@ -12,6 +12,10 @@ CONNECTION_LINGER_MS = 1500
 CONNECTION_RETRY_MS = 2500
 
 class Client extends EventEmitter
+    known_services: {}
+    service_subscriptions: {}
+    service_connections: {}
+
     constructor: (options={}) ->
         Object.assign @, options
 
@@ -27,24 +31,12 @@ class Client extends EventEmitter
         @registry_connection.on 'reconnect', @findServices.bind(@)
 
     connectedToRegistry: ->
+        @connected_to_registry = true
         register_subscription = new Subscription {type: 'register', cb: @registeredService.bind(@)}
         deregister_subscription = new Subscription {type: 'deregister', cb: @deregisteredService.bind(@)}
         register_subscription.subscribe @registry_connection, {keepalive: true}
         deregister_subscription.subscribe @registry_connection, {keepalive: true}
         @findServices()
-        @once 'found-services', @testSubscribe.bind(@)
-
-    testSubscribe: ->
-        setTimeout =>
-            @call 'announcement', 'announce', 'test', (err, response) ->
-                if err
-                    log.e err
-                else
-                    log.s 'response', response
-        , 1500
-
-        @subscribe 'announcement', 'announcement', (announced) ->
-            log.s 'announced', announced
 
     findServices: ->
         @registry_connection.sendMethod null, 'findServices', [], (err, services) =>
@@ -71,9 +63,11 @@ class Client extends EventEmitter
             log.e '[call] No connection'
             cb 'No connection'
 
-    service_subscriptions: {}
-
     subscribe: (service, type, args..., cb) ->
+        if !@connected_to_registry
+            setTimeout (=> @subscribe service, type, args..., cb), 500
+            return
+
         log.d '[subscribe]', service, type, args
         if connection = @getConnection(service)
             s = new Subscription {service, type, args, cb}
@@ -82,6 +76,8 @@ class Client extends EventEmitter
             @service_subscriptions[service].push s
         else
             log.e '[subscribe] No connection'
+            _subscribe = => @subscribe service, type, args..., cb
+            setTimeout _subscribe, 1500
 
     resubscribe: (subscription) ->
         if connection = @getConnection(subscription.service)
@@ -92,8 +88,6 @@ class Client extends EventEmitter
             setTimeout _resubscribe, 1500
 
     # Connections to Services
-
-    service_connections: {}
 
     getService: (service_name) ->
         if services = @known_services[service_name]
