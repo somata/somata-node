@@ -12,7 +12,7 @@ class Subscription extends EventEmitter
     subscribe: (connection, options={}) ->
         @connection = connection
         log.i "[Subscription.subscribe] #{@id} <#{@connection.id}>"
-        @connection.sendSubscribe @id, @type, @args, @cb
+        @connection.sendSubscribe @id, @service, @type, @args, @cb
 
         @resubscribe = @_resubscribe.bind(@)
 
@@ -21,7 +21,7 @@ class Subscription extends EventEmitter
 
     _resubscribe: ->
         log.i "[Subscription.resubscribe] #{@id} <#{@connection.id}>"
-        @connection.sendSubscribe @id, @type, @args, @cb
+        @connection.sendSubscribe @id, @service, @type, @args, @cb
 
     unsubscribe: ->
         log.w "[Subscription.unsubscribe] <#{@connection.id}> #{@id}"

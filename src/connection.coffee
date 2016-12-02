@@ -131,10 +131,11 @@ module.exports = class Connection extends EventEmitter
             args: args
         @send method_msg, cb
 
-    sendSubscribe: (id, type, args, cb) ->
+    sendSubscribe: (id, service, type, args, cb) ->
         subscribe_msg =
             id: id
             kind: 'subscribe'
+            service: service
             type: type
             args: args
         @send subscribe_msg, cb
@@ -145,6 +146,7 @@ module.exports = class Connection extends EventEmitter
         subscribe_msg =
             id: subscription.id
             kind: 'subscribe'
+            service: subscription.service
             type: subscription.type
             args: subscription.args
         @send subscribe_msg, existing_cb

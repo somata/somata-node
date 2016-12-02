@@ -44,6 +44,10 @@ exports.randomString = (len=8) ->
 exports.summarizeMessage = (message) ->
     util.inspect(message).slice(0,100).replace(/\s+/g, ' ')
 
+# Summarize a client
+exports.summarizeClient = (client) ->
+    "<#{client.id}> #{client.address}"
+
 # Summarize a connection
 exports.summarizeConnection = (connection) ->
     "<#{connection.id}> #{connection.address}"

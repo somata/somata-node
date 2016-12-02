@@ -3,6 +3,10 @@ Subscription = require './subscription'
 {EventEmitter} = require 'events'
 helpers = require './helpers'
 {log} = helpers
+emitters = require './events'
+
+emitters.exit.onExit ->
+    process.exit()
 
 VERBOSE = parseInt process.env.SOMATA_VERBOSE || 0
 REGISTRY_PROTO = process.env.SOMATA_REGISTRY_PROTO || 'tcp'
@@ -23,17 +27,18 @@ class Client extends EventEmitter
 
     connectToRegistry: ->
         @registry_connection = new Connection
-            proto: REGISTRY_PROTO
-            host: REGISTRY_HOST
-            port: REGISTRY_PORT
+            proto: @registry_proto or REGISTRY_PROTO
+            host: @registry_host or REGISTRY_HOST
+            port: @registry_port or REGISTRY_PORT
 
         @registry_connection.once 'connect', @connectedToRegistry.bind(@)
         @registry_connection.on 'reconnect', @findServices.bind(@)
 
     connectedToRegistry: ->
+        console.log '[connected to registry]', helpers.summarizeConnection @registry_connection
         @connected_to_registry = true
-        register_subscription = new Subscription {type: 'register', cb: @registeredService.bind(@)}
-        deregister_subscription = new Subscription {type: 'deregister', cb: @deregisteredService.bind(@)}
+        register_subscription = new Subscription {service: 'registry', type: 'register', cb: @registeredService.bind(@)}
+        deregister_subscription = new Subscription {service: 'registry', type: 'deregister', cb: @deregisteredService.bind(@)}
         register_subscription.subscribe @registry_connection, {keepalive: true}
         deregister_subscription.subscribe @registry_connection, {keepalive: true}
         @findServices()
@@ -94,7 +99,9 @@ class Client extends EventEmitter
             return null
 
     getConnection: (service_name) ->
-        if connection = @service_connections[service_name]
+        if service_name == 'registry'
+            return @registry_connection
+        else if connection = @service_connections[service_name]
             return connection
         else
             if service = @getService(service_name)

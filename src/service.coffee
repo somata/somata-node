@@ -25,7 +25,7 @@ module.exports = class SomataService extends EventEmitter
         @id = @name + '~' + helpers.randomString()
 
         # Determine options
-        _.extend @, options
+        Object.assign @, options
         @rpc_options ||= {}
         @rpc_options.proto ||= SERVICE_PROTO
         @rpc_options.host ||= SERVICE_HOST
@@ -40,11 +40,12 @@ module.exports = class SomataService extends EventEmitter
             @deregister cb
 
     bindRPC: (cb) ->
-        @rpc_binding = new Binding @rpc_options
-        @rpc_binding.on 'bind', cb
-        @rpc_binding.on 'method', @handleMethod.bind(@)
-        @rpc_binding.on 'subscribe', @handleSubscribe.bind(@)
-        @rpc_binding.on 'unsubscribe', @handleUnsubscribe.bind(@)
+        console.log 'going to bind at', @rpc_options
+        @binding = new Binding @rpc_options
+        @binding.on 'bind', cb
+        @binding.on 'method', @handleMethod.bind(@)
+        @binding.on 'subscribe', @handleSubscribe.bind(@)
+        @binding.on 'unsubscribe', @handleUnsubscribe.bind(@)
 
     # Handle a remote method call
     # --------------------------------------------------------------------------
@@ -52,7 +53,7 @@ module.exports = class SomataService extends EventEmitter
     # Helpers for sending response messages
 
     sendResponse: (client_id, message_id, response) ->
-        @rpc_binding.send client_id,
+        @binding.send client_id,
             id: message_id
             kind: 'response'
             response: response
@@ -60,7 +61,7 @@ module.exports = class SomataService extends EventEmitter
     sendError: (client_id, message_id, error) ->
         if error.toString?
             error = error.toString()
-        @rpc_binding.send client_id,
+        @binding.send client_id,
             id: message_id
             kind: 'error'
             error: error
@@ -151,7 +152,7 @@ module.exports = class SomataService extends EventEmitter
 
     sendEvent: (client_id, subscription_id, event, event_name) ->
         log.d "[sendEvent] <#{client_id}> #{subscription_id}" if VERBOSE
-        @rpc_binding.send client_id,
+        @binding.send client_id,
             id: subscription_id
             kind: 'event'
             event: event
@@ -163,7 +164,7 @@ module.exports = class SomataService extends EventEmitter
         delete @subscriptions_by_event_name[event_name]
 
     sendEnd: (client_id, subscription_id) ->
-        @rpc_binding.send client_id,
+        @binding.send client_id,
             id: subscription_id
             kind: 'end'
 
@@ -180,9 +181,9 @@ module.exports = class SomataService extends EventEmitter
 
     register: ->
         @registry_connection = new Connection
-            proto: REGISTRY_PROTO
-            port: REGISTRY_PORT
-            host: REGISTRY_HOST
+            proto: @registry_proto or REGISTRY_PROTO
+            host: @registry_host or REGISTRY_HOST
+            port: @registry_port or REGISTRY_PORT
         @registry_connection.service_instance = {id: 'registry', name: 'registry'}
         @registry_connection.once 'connect', @registryConnected.bind(@)
         @registry_connection.on 'reconnect', @registryConnected.bind(@)
@@ -195,13 +196,13 @@ module.exports = class SomataService extends EventEmitter
         service_instance =
             id: @id
             name: @name
-            proto: @rpc_binding.proto
-            host: @rpc_binding.host
-            port: @rpc_binding.port
+            proto: @binding.proto
+            host: @binding.host
+            port: @binding.port
             methods: Object.keys @methods
 
         @registry_connection.sendMethod null, 'registerService', [service_instance], (err, registered) =>
-            log.s "Registered service `#{@id}` on #{@rpc_binding.address}"
+            log.s "Registered service `#{@id}` on #{@binding.address}"
             cb(null, registered) if cb?
 
     deregister: (cb) ->
@@ -210,7 +211,7 @@ module.exports = class SomataService extends EventEmitter
             cb() if cb?
         else
             @registry_connection.sendMethod null, 'deregisterService', [@name, @id], (err, deregistered) =>
-                log.e "[deregister] Deregistered `#{@id}` from :#{@rpc_binding.port}"
+                log.e "[deregister] Deregistered `#{@id}` from :#{@binding.port}"
                 cb(null, deregistered) if cb?
             @registry_connection.on 'failure', ->
                 log.e "[deregister] Registry is dead"
