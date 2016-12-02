@@ -41,8 +41,6 @@ class Client extends EventEmitter
     findServices: ->
         @registry_connection.sendMethod null, 'findServices', [], (err, services) =>
             @known_services = services
-            log.s '[findServices] found services', Object.keys(services)
-            @emit 'found-services'
 
     registeredService: (new_service) ->
         log.d '[Client.registry_connection.register]', new_service
