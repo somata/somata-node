@@ -53,14 +53,14 @@ class Client extends EventEmitter
         log.d '[Client.registry_connection.deregister]', old_service
         delete @known_services[old_service.name]?[old_service.id]
 
-    # Main API of call and subscribe
+    # Main API of remote and subscribe
 
-    call: (service, method, args..., cb) ->
-        log.d '[call]', service, method, args
+    remote: (service, method, args..., cb) ->
+        log.d '[remote]', service, method, args
         if connection = @getConnection(service)
             connection.sendMethod null, method, args, cb
         else
-            log.e '[call] No connection'
+            log.e '[remote] No connection'
             cb 'No connection'
 
     subscribe: (service, type, args..., cb) ->
@@ -105,9 +105,10 @@ class Client extends EventEmitter
                 connection.on 'timeout', =>
                     log.e "[connection.on timeout] #{service_name}"
                     delete @service_connections[service_name]
-                    for subscription in @service_subscriptions[service_name]
-                        subscription.unsubscribe()
-                        @resubscribe(subscription)
+                    if subscriptions = @service_subscriptions[service_name]
+                        for subscription in subscriptions
+                            subscription.unsubscribe()
+                            @resubscribe(subscription)
                     connection.close()
                 return connection
             else

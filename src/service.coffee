@@ -1,12 +1,12 @@
 util = require 'util'
-helpers = require './helpers'
 _ = require 'underscore'
 {EventEmitter} = require 'events'
 usage = require 'usage'
 emitters = require './events'
 Binding = require './binding'
 Connection = require './connection'
-log = helpers.log
+helpers = require './helpers'
+{log} = helpers
 
 VERBOSE = parseInt process.env.SOMATA_VERBOSE || 0
 REGISTRY_PROTO = process.env.SOMATA_REGISTRY_PROTO || 'tcp'
@@ -42,7 +42,6 @@ module.exports = class SomataService extends EventEmitter
     bindRPC: (cb) ->
         @rpc_binding = new Binding @rpc_options
         @rpc_binding.on 'bind', cb
-        @rpc_binding.on 'ping', @handlePing.bind(@)
         @rpc_binding.on 'method', @handleMethod.bind(@)
         @rpc_binding.on 'subscribe', @handleSubscribe.bind(@)
         @rpc_binding.on 'unsubscribe', @handleUnsubscribe.bind(@)
@@ -69,7 +68,7 @@ module.exports = class SomataService extends EventEmitter
     # Interpreting a method call
 
     handleMethod: (client_id, message) ->
-        log "<#{ client_id }>: #{ util.inspect message, depth: null }" if VERBOSE
+        log "<#{client_id}>: #{util.inspect message, depth: null}" if VERBOSE
 
         # Find the method
         method_name = message.method
@@ -92,7 +91,7 @@ module.exports = class SomataService extends EventEmitter
                 if arity_mismatch &&
                     e instanceof TypeError &&
                     err.slice(11) == 'undefined is not a function'
-                        err = "ArityError? method `#{ method_name }` takes #{ _method.length-1 } arguments."
+                        err = "ArityError? method `#{method_name}` takes #{_method.length-1} arguments."
                 log.e '[ERROR] ' + err
                 console.error e.stack
                 @sendError client_id, message.id, err
@@ -119,22 +118,6 @@ module.exports = class SomataService extends EventEmitter
             else
                 return @methods[method_name]
 
-    # Handle a ping
-    # --------------------------------------------------------------------------
-
-    # Map of client_id -> boolean
-    known_pings: {}
-
-    handlePing: (client_id, message) ->
-        log "<#{ client_id }>: #{ util.inspect message, depth: null }" if VERBOSE > 1
-        if @known_pings[client_id]
-            response = 'pong'
-        else
-            @known_pings[client_id] = true
-            response = 'hello'
-        @gotPing? client_id
-        @sendResponse client_id, message.id, response
-
     # Handle a subscription
     # --------------------------------------------------------------------------
 
@@ -145,7 +128,7 @@ module.exports = class SomataService extends EventEmitter
         event_name = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join('::')
-        log.i "[Service.handleSubscribe] Subscribing #{client_id} <#{ subscription_key }>"
+        log.i "[Service.handleSubscribe] Subscribing #{client_id} <#{subscription_key}>"
         @subscriptions_by_event_name[event_name] ||= []
         @subscriptions_by_event_name[event_name].push subscription_key
         @subscriptions_by_client[client_id] ||= []
@@ -155,7 +138,7 @@ module.exports = class SomataService extends EventEmitter
         event_name = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join('::')
-        log.w "[Service.handleUnsubscribe] Unsubscribing <#{ subscription_key }>"
+        log.w "[Service.handleUnsubscribe] Unsubscribing <#{subscription_key}>"
         # TODO: Improve how subscriptions are stored
         for event_name, subscription_keys of @subscriptions_by_event_name
             @subscriptions_by_event_name[event_name] = _.without subscription_keys, subscription_key
@@ -201,8 +184,8 @@ module.exports = class SomataService extends EventEmitter
             port: REGISTRY_PORT
             host: REGISTRY_HOST
         @registry_connection.service_instance = {id: 'registry', name: 'registry'}
-        @registry_connection.on 'connect', @registryConnected.bind(@)
-        @registry_connection.sendPing()
+        @registry_connection.once 'connect', @registryConnected.bind(@)
+        @registry_connection.on 'reconnect', @registryConnected.bind(@)
 
     registryConnected: ->
         # TODO: Consider re-subscriptions from clients
@@ -218,7 +201,7 @@ module.exports = class SomataService extends EventEmitter
             methods: Object.keys @methods
 
         @registry_connection.sendMethod null, 'registerService', [service_instance], (err, registered) =>
-            log.s "Registered service `#{ @id }` on #{ @rpc_binding.address }"
+            log.s "Registered service `#{@id}` on #{@rpc_binding.address}"
             cb(null, registered) if cb?
 
     deregister: (cb) ->
@@ -227,7 +210,7 @@ module.exports = class SomataService extends EventEmitter
             cb() if cb?
         else
             @registry_connection.sendMethod null, 'deregisterService', [@name, @id], (err, deregistered) =>
-                log.e "[deregister] Deregistered `#{ @id }` from :#{ @rpc_binding.port }"
+                log.e "[deregister] Deregistered `#{@id}` from :#{@rpc_binding.port}"
                 cb(null, deregistered) if cb?
             @registry_connection.on 'failure', ->
                 log.e "[deregister] Registry is dead"
