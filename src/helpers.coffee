@@ -30,6 +30,9 @@ log.s = (s, d) -> log s, d, color: 'green'
 # Capitalize the first letter of a string
 exports.capitalize = (type) -> type[0].toUpperCase() + type.slice(1)
 
+exports.randomChoice = (list) ->
+    list[Math.floor(Math.random() * list.length)]
+
 # Generate a random alphanumeric string
 exports.randomString = (len=8) ->
     s = ''
@@ -37,8 +40,16 @@ exports.randomString = (len=8) ->
         s += Math.random().toString(36).slice(2, len - s.length+2)
     return s
 
+# Summarize a message
+exports.summarizeMessage = (message) ->
+    util.inspect(message).slice(0,100).replace(/\s+/g, ' ')
+
+# Summarize a connection
+exports.summarizeConnection = (connection) ->
+    "<#{connection.id}> #{connection.address}"
+
 # Summarize a service
-exports.serviceSummary = (service) ->
+exports.summarizeService = (service) ->
     return service.name + '@' + service.binding.host + ':' + service.binding.port
 
 # Create a proto://host:port address
@@ -57,3 +68,16 @@ descend = (o, c) ->
     else
         return descend o[c.shift()], c
 exports.descend = descend
+
+exports.parseAddress = (s, default_host, default_port) ->
+    if !s?
+        if default_host?
+            return {host: default_host, port: default_port}
+        else
+            return null
+    else
+        [host, port] = s.split(':')
+        host ||= default_host
+        port ||= default_port
+        return {host, port}
+
