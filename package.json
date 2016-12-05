@@ -30,7 +30,7 @@
         "request": "2.x.x",
         "underscore": "1.x.x",
         "usage": "0.7.x",
-        "zmq": "2.14.x"
+        "zmq": "2.15.x"
     }
 }
 
