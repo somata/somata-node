@@ -4,103 +4,137 @@ util = require 'util'
 helpers = require './helpers'
 {log} = helpers
 
-VERBOSE =       process.env.SOMATA_VERBOSE || false
+VERBOSE =       parseInt process.env.SOMATA_VERBOSE || 0
 DEFAULT_PROTO = process.env.SOMATA_PROTO   || 'tcp'
 DEFAULT_HOST =  process.env.SOMATA_HOST    || '127.0.0.1'
+MAX_BIND_RETRIES = 5
 
 module.exports = class Binding extends EventEmitter
 
-    constructor: (options={}) ->
-        log.d '[Binding.constructor]', options if VERBOSE
+    pending_responses: {}
+    subscriptions: {}
+    known_pings: {}
 
-        @id = helpers.randomString()
-        @proto = options.proto || DEFAULT_PROTO
-        @host = options.host || DEFAULT_HOST
-        @port = options.port || helpers.randomPort() if @proto != 'ipc'
+    constructor: (options={}) ->
+        Object.assign @, options
+
+        @id ||= helpers.randomString()
+        @proto ||= DEFAULT_PROTO
+        @host ||= DEFAULT_HOST
+        @port ||= helpers.randomPort() if @proto != 'ipc'
         @should_retry = !options.port? # Retry with random ports if not specified
 
-        @tryBinding()
+        @tryBind()
+
+    # Binding
+    # --------------------------------------------------------------------------
+
+    tryBind: (n_retried=0) ->
+        try
+            @address = helpers.makeAddress @proto, @host, @port
+            log.d "[tryBind] Attempting to bind on #{@address}..." if VERBOSE
+            @socket = zmq.socket 'router'
+            @socket.bindSync @address
+            @didBind()
+
+        catch err
+            log.e "[tryBind] Failed to bind on #{@address}", err
+
+            if !@should_retry
+                process.exit()
+
+            else if n_retried < MAX_BIND_RETRIES
+                log.w "[tryBind] Retrying..."
+                @port = helpers.randomPort()
+                setTimeout =>
+                    @tryBind(n_retried+1)
+                , 1000
+
+            else
+                log.e "[tryBind] Retried too many times."
+                process.exit()
 
     didBind: ->
-        # Announce binding
-        log.i "[didBind] Socket #{@id} bound to #{@address}..." if VERBOSE
+        # Announce that it did bind
+        log.i "[didBind] Socket #{@id} bound to #{@address}" if VERBOSE
         process.nextTick => @emit 'bind'
 
         # Start handling messages
         @socket.on 'message', (client_id, message_json) =>
             @handleMessage client_id.toString(), JSON.parse message_json
 
-        # Handling pings
+        # Subscribe to default message kinds
         @on 'ping', @handlePing.bind(@)
+        @on 'method', @handleMethod.bind(@)
         @on 'subscribe', @handleSubscribe.bind(@)
         @on 'unsubscribe', @handleUnsubscribe.bind(@)
 
-    handlePing: (client_id, ping) ->
-        if @known_pings[ping.id]
-            response = 'pong'
+    # Incoming messages (from a Connection)
+    # --------------------------------------------------------------------------
+
+    handleMessage: (client_id, message) ->
+        log.d "[binding.handleMessage] <#{client_id}> #{helpers.summarizeMessage message}" if VERBOSE > 1
+        if cb = @pending_responses[message.id]
+            cb message
+        @emit message.kind, client_id, message
+
+    handlePing: (client_id, message) ->
+        if message.ping == 'hello' or !@known_pings[message.id]
+            @known_pings[message.id] = client_id
+            pong = 'welcome'
+            @emit 'connected', client_id
         else
-            @known_pings[ping.id] = true
-            response = 'hello'
+            pong = 'pong'
 
         @send client_id, {
-            id: ping.id
-            kind: 'response'
-            response
+            id: message.id
+            pong
         }
 
+    handleMethod: (client_id, message) ->
+        log.d "[Binding.on method]", message if VERBOSE
+        if method = @methods?[message.method]
+            response = method message.args..., (err, response) =>
+                @send client_id, {id: message.id, kind: 'response', response}
+        else
+            @send client_id, {id: message.id, kind: 'error', error: "Unknown method"}
+
     handleSubscribe: (client_id, subscription) ->
-        log.d '[Binding.on subscribe]', client_id, subscription
+        log.d '[Binding.on subscribe]', client_id, subscription if VERBOSE
         subscription.client_id = client_id
         @subscriptions[subscription.type] ||= {}
         @subscriptions[subscription.type][subscription.id] = subscription
 
     handleUnsubscribe: (client_id, unsubscription) ->
-        log.d '[Binding.on unsubscribe]', client_id, unsubscription
+        log.d '[Binding.on unsubscribe]', client_id, unsubscription if VERBOSE
         delete @subscriptions[unsubscription.type]?[unsubscription.id]
 
-    tryBinding: (n_retried=0) ->
-        try
-            @address = helpers.makeAddress @proto, @host, @port
-            log.d "[tryBinding] Attempting to bind on #{@address}..." if VERBOSE
-            @socket = zmq.socket 'router'
-            @socket.bindSync @address
-            @didBind()
+    # Outgoing messages
+    # --------------------------------------------------------------------------
 
-        catch err
-            log.e "[tryBinding] Failed to bind on #{@address}", err
-
-            if !@should_retry
-                process.exit()
-
-            else if n_retried < 5
-                log.w "[tryBinding] Retrying..."
-                @port = helpers.randomPort()
-                setTimeout =>
-                    @tryBinding(n_retried+1)
-                , 1000
-
-            else
-                log.e "[tryBinding] Retried too many times."
-                process.exit()
-
-    send: (client_id, message) ->
+    send: (client_id, message, cb) ->
+        if cb?
+            message.id ||= helpers.randomString()
+            @pending_responses[message.id] = cb
         @socket.send [client_id, JSON.stringify message]
 
-    handleMessage: (client_id, message) ->
-        log.d "[binding.handleMessage] <#{client_id}> #{helpers.summarizeMessage message}" if VERBOSE > 1
-        @emit message.kind, client_id, message
+    method: (client_id, method, args..., cb) ->
+        @send client_id, {
+            kind: 'method'
+            method, args
+        }, (message) ->
+            cb message.error, message.response, message
 
-    subscriptions: {}
+    subscribe: (client_id, type, args..., cb) ->
+        @send client_id, {
+            kind: 'subscribe'
+            type, args
+        }, (message) ->
+            cb message.error, message.event, message
 
-    known_pings: {}
+    publish: (type, event) ->
+        subscriptions = @subscriptions[type]
+        for subscription in helpers.values subscriptions
+            {id, client_id} = subscription
+            @send client_id, {id, type, event}
 
-# setInterval ->
-#     for subscription_type in Object.keys(subscriptions)
-#         for subscription_id in Object.keys(subscriptions[subscription_type])
-#             subscription = subscriptions[subscription_type][subscription_id]
-#             b.send subscription.client_id, {
-#                 id: subscription_id
-#                 kind: 'event'
-#                 event: {test: true}
-#             }
-# , 2000
