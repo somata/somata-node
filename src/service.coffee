@@ -26,10 +26,10 @@ module.exports = class SomataService extends EventEmitter
 
         # Determine options
         Object.assign @, options
-        @rpc_options ||= {}
-        @rpc_options.proto ||= SERVICE_PROTO
-        @rpc_options.host ||= SERVICE_HOST
-        @rpc_options.port ||= SERVICE_PORT
+        @binding_options ||= {}
+        @binding_options.proto ||= SERVICE_PROTO
+        @binding_options.host ||= SERVICE_HOST
+        @binding_options.port ||= SERVICE_PORT
 
         # Bind and register the service
         @bindRPC =>
@@ -40,8 +40,7 @@ module.exports = class SomataService extends EventEmitter
             @deregister cb
 
     bindRPC: (cb) ->
-        console.log 'going to bind at', @rpc_options
-        @binding = new Binding @rpc_options
+        @binding = new Binding @binding_options
         @binding.on 'bind', cb
         @binding.on 'method', @handleMethod.bind(@)
         @binding.on 'subscribe', @handleSubscribe.bind(@)
@@ -186,8 +185,7 @@ module.exports = class SomataService extends EventEmitter
             host: @registry_host or REGISTRY_HOST
             port: @registry_port or REGISTRY_PORT
         @registry_connection.service_instance = {id: 'registry', name: 'registry'}
-        @registry_connection.once 'connect', @registryConnected.bind(@)
-        @registry_connection.on 'reconnect', @registryConnected.bind(@)
+        @registry_connection.on 'connect', @registryConnected.bind(@)
 
     registryConnected: ->
         # TODO: Consider re-subscriptions from clients
@@ -202,7 +200,7 @@ module.exports = class SomataService extends EventEmitter
             port: @binding.port
             methods: Object.keys @methods
 
-        @registry_connection.sendMethod null, 'registerService', [service_instance], (err, registered) =>
+        @registry_connection.method 'registry', 'registerService', service_instance, (err, registered) =>
             log.s "Registered service `#{@id}` on #{@binding.address}"
             cb(null, registered) if cb?
 
@@ -211,7 +209,7 @@ module.exports = class SomataService extends EventEmitter
             log.e "[deregister] Registry is dead"
             cb() if cb?
         else
-            @registry_connection.sendMethod null, 'deregisterService', [@name, @id], (err, deregistered) =>
+            @registry_connection.method 'registry', 'deregisterService', @name, @id, (err, deregistered) =>
                 log.e "[deregister] Deregistered `#{@id}` from :#{@binding.port}"
                 cb(null, deregistered) if cb?
             @registry_connection.on 'failure', ->

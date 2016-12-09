@@ -1,5 +1,4 @@
 {EventEmitter} = require 'events'
-events = require './events'
 async = require 'async'
 
 exit = new EventEmitter

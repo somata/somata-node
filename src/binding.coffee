@@ -26,6 +26,9 @@ module.exports = class Binding extends EventEmitter
 
         @tryBind()
 
+    emitNext: (args...) ->
+        process.nextTick => @emit args...
+
     # Binding
     # --------------------------------------------------------------------------
 
@@ -57,7 +60,7 @@ module.exports = class Binding extends EventEmitter
     didBind: ->
         # Announce that it did bind
         log.i "[didBind] Socket #{@id} bound to #{@address}" if VERBOSE
-        process.nextTick => @emit 'bind'
+        @emitNext 'bind'
 
         # Start handling messages
         @socket.on 'message', (client_id, message_json) =>
@@ -74,30 +77,58 @@ module.exports = class Binding extends EventEmitter
 
     handleMessage: (client_id, message) ->
         log.d "[binding.handleMessage] <#{client_id}> #{helpers.summarizeMessage message}" if VERBOSE > 1
-        if cb = @pending_responses[message.id]
+        if cb = @pending_responses[client_id]?[message.id]
             cb message
-        @emit message.kind, client_id, message
+
+        else
+            @emit message.kind, client_id, message
 
     handlePing: (client_id, message) ->
-        if message.ping == 'hello' or !@known_pings[message.id]
-            @known_pings[message.id] = client_id
+        if message.ping == 'hello' or @known_pings[client_id] != message.id
+            @known_pings[client_id] = message.id
+            @clearSubscriptions(client_id)
+            @emitNext 'connected', client_id
             pong = 'welcome'
-            @emit 'connected', client_id
         else
             pong = 'pong'
+
+        @setPingTimeout(client_id)
 
         @send client_id, {
             id: message.id
             pong
         }
 
+    ping_timeouts: {}
+
+    setPingTimeout: (client_id) ->
+        clearTimeout @ping_timeouts[client_id]
+        pingDidTimeout = @pingDidTimeout.bind(@, client_id)
+        @ping_timeouts[client_id] = setTimeout pingDidTimeout, 2500
+
+    clearSubscriptions: (client_id) ->
+        for subscription_type, subscriptions of @subscriptions
+            for subscription_id, subscription of subscriptions
+                if subscription.client_id == client_id
+                    delete @subscriptions[subscription_type][subscription_id]
+                    console.log 'delete id subs', subscription_id
+                    delete @pending_responses[client_id]?[subscription_id]
+
+    pingDidTimeout: (client_id) ->
+        @clearSubscriptions(client_id)
+        delete @known_pings[client_id]
+        log.e 'Binding.on client timeout', client_id
+        @emit 'timeout', client_id
+
     handleMethod: (client_id, message) ->
         log.d "[Binding.on method]", message if VERBOSE
-        if method = @methods?[message.method]
+        if message.service?
+            # Ignore as it was meant for a service
+        else if method = @methods?[message.method]
             response = method message.args..., (err, response) =>
                 @send client_id, {id: message.id, kind: 'response', response}
         else
-            @send client_id, {id: message.id, kind: 'error', error: "Unknown method"}
+            @send client_id, {id: message.id, kind: 'error', error: "Unknown method '#{message.method}'"}
 
     handleSubscribe: (client_id, subscription) ->
         log.d '[Binding.on subscribe]', client_id, subscription if VERBOSE
@@ -115,7 +146,8 @@ module.exports = class Binding extends EventEmitter
     send: (client_id, message, cb) ->
         if cb?
             message.id ||= helpers.randomString()
-            @pending_responses[message.id] = cb
+            @pending_responses[client_id] ||= {}
+            @pending_responses[client_id][message.id] = cb
         @socket.send [client_id, JSON.stringify message]
 
     method: (client_id, method, args..., cb) ->

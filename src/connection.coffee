@@ -45,7 +45,6 @@ module.exports = class Connection extends EventEmitter
         @address = helpers.makeAddress @proto, @host, @port
 
         @connect()
-        @sendPing()
 
     # Create and connect the connection socket
     # --------------------------------------------------------------------------
@@ -61,8 +60,12 @@ module.exports = class Connection extends EventEmitter
 
         log.i "[Connection.connect] #{helpers.summarizeConnection(@)} connected to #{@address}..." if VERBOSE
 
+        @connected()
+
+    connected: ->
         @on 'method', @handleMethod.bind(@)
         @on 'subscribe', @handleSubscribe.bind(@)
+        @sendPing()
 
     # Incoming messages (from a connected-to Binding)
     # --------------------------------------------------------------------------
@@ -98,6 +101,7 @@ module.exports = class Connection extends EventEmitter
 
     handleSubscribe: (subscription) ->
         log.d '[Connection.on subscribe]', subscription if VERBOSE
+        log.d '[Connection.on subscribe]', subscription
         @subscriptions[subscription.type] ||= {}
         @subscriptions[subscription.type][subscription.id] = subscription
 
@@ -110,24 +114,30 @@ module.exports = class Connection extends EventEmitter
     send: (message, cb) ->
         message.id ||= helpers.randomString 16
         if cb?
-            @pending_responses[message_id] = cb
+            @pending_responses[message.id] = cb
         @socket.send JSON.stringify message
         return message
 
-    method: (method, args..., cb) ->
+    method: (service, method, args..., cb) ->
         cb.once = true
         @send {
             kind: 'method'
-            method, args
+            service, method, args
         }, (message) ->
             cb message.error, message.response, message
 
-    subscribe: (type, args..., cb) ->
+    subscribe: (service, type, args..., cb) ->
         @send {
             kind: 'subscribe'
-            type, args
+            service, type, args
         }, (message) ->
             cb message.error, message.event, message
+
+    unsubscribe: (service, id) ->
+        @send {
+            kind: 'unsubscribe'
+            service, id
+        }
 
     publish: (type, event) ->
         subscriptions = @subscriptions[type]
@@ -140,9 +150,6 @@ module.exports = class Connection extends EventEmitter
 
     last_ping: null
     last_pong: null
-
-    startPing: ->
-        console.log '[startPing]'
 
     sendPing: ->
         @pongTimeoutTimeout = setTimeout @pongDidTimeout.bind(@), PING_INTERVAL
@@ -157,8 +164,9 @@ module.exports = class Connection extends EventEmitter
             return
 
         if message.pong == 'welcome'
-            log.i "[Connection.handlePong] #{helpers.summarizeConnection(@)} New ping response" if VERBOSE
+            log.i "[Connection.handlePong] #{helpers.summarizeConnection(@)} New ping response" if VERBOSE or true
             is_new = !@last_pong?
+            @clearSubscriptions()
             @emit 'connect', is_new
             @last_pong = new Date()
 
@@ -171,7 +179,16 @@ module.exports = class Connection extends EventEmitter
     pongDidTimeout: ->
         log.e "[Connection.pongDidTimeout] #{helpers.summarizeConnection(@)}"
         # @nextPingTimeout = setTimeout @sendPing.bind(@), PING_INTERVAL * 2
+        delete @last_ping
+        @clearSubscriptions()
         @emit 'timeout'
+
+    clearSubscriptions: ->
+        for subscription_type, subscriptions of @subscriptions
+            for subscription_id, subscription of subscriptions
+                delete @subscriptions[subscription_type][subscription_id]
+                console.log 'delete id subs', subscription_id
+                delete @pending_responses[subscription_id]
 
     close: ->
         log.e "[Connection.close] #{helpers.summarizeConnection(@)}"
