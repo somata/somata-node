@@ -28,39 +28,13 @@ class Client extends EventEmitter
             port: @registry_port or REGISTRY_PORT
             keepalive: true
 
-        @registry_connection.once 'connect', @registryConnected.bind(@)
-        @registry_connection.on 'reconnect', @registryReconnected.bind(@)
-
-        @registry_connection.subscribe 'register', @registeredService.bind(@)
-        @registry_connection.subscribe 'deregister', @deregisteredService.bind(@)
-
-        # @register_subscription = new Subscription {service: 'registry', type: 'register'}
-        # @register_subscription.on 'register', @registeredService.bind(@)
-
-        # @deregister_subscription = new Subscription {service: 'registry', type: 'deregister'}
-        # @deregister_subscription.on 'deregister', @deregisteredService.bind(@)
+        @registry_connection.on 'connect', @registryConnected.bind(@)
 
     registryConnected: ->
         @connected_to_registry = true
 
-#         @register_subscription.subscribe @registry_connection
-#         @deregister_subscription.subscribe @registry_connection
-
-        @findServices()
-
-    registryReconnected: ->
-        setTimeout =>
-            @findServices()
-        , 1500
-
-    findServices: ->
-        console.log '[findServices]'
-        @registry_connection.method 'registry', 'findServices', (err, services) =>
-            console.log 'what services', err, services
-            @known_services = services
-            for service_name, services of @known_services
-                for service_id, service of services
-                    console.log  "  * [#{service.id}] #{service.host}:#{service.port}"
+        @registry_connection.subscribe 'register', @registeredService.bind(@)
+        @registry_connection.subscribe 'deregister', @deregisteredService.bind(@)
 
     registeredService: (new_service) ->
         log.d '[Client.registry_connection.register]', new_service if VERBOSE > 1
@@ -162,7 +136,6 @@ class Client extends EventEmitter
                         if subscriptions = @service_subscriptions[service_name]
                             for subscription in subscriptions
                                 connection.unsubscribe subscription.service, subscription.id
-                                console.log 'need o resubscribe', subscription
                                 setTimeout =>
                                     @subscribe subscription.service, subscription.type, subscription.cb
                                 , 1500

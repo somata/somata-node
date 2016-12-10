@@ -187,7 +187,6 @@ module.exports = class Connection extends EventEmitter
         for subscription_type, subscriptions of @subscriptions
             for subscription_id, subscription of subscriptions
                 delete @subscriptions[subscription_type][subscription_id]
-                console.log 'delete id subs', subscription_id
                 delete @pending_responses[subscription_id]
 
     close: ->
