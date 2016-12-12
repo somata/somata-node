@@ -111,7 +111,6 @@ module.exports = class Binding extends EventEmitter
             for subscription_id, subscription of subscriptions
                 if subscription.client_id == client_id
                     delete @subscriptions[subscription_type][subscription_id]
-                    console.log 'delete id subs', subscription_id
                     delete @pending_responses[client_id]?[subscription_id]
 
     pingDidTimeout: (client_id) ->

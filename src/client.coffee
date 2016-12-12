@@ -72,7 +72,6 @@ class Client extends EventEmitter
             id = helpers.randomString()
 
         if !@connected_to_registry
-            console.log 'not subscribed'
             setTimeout (=> @subscribe {id, service, type, args}, cb), 500
             return
 
@@ -106,7 +105,6 @@ class Client extends EventEmitter
         @registry_connection.method 'getService', service_id, cb
 
     getConnection: (service_id, cb) ->
-        console.log '[getconnection]', service_id
 
         if service_id.match /^registry/
             return cb null, @registry_connection
@@ -116,7 +114,6 @@ class Client extends EventEmitter
 
         else
             @getService service_id.split('~')[0], (err, service) =>
-                console.log 'returning from get service', err, service
 
                 if err or !service?
                     return cb err
