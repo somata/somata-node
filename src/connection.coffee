@@ -113,30 +113,31 @@ module.exports = class Connection extends EventEmitter
 
     send: (message, cb) ->
         message.id ||= helpers.randomString 16
+        message.service ||= @service?.id
         if cb?
             @pending_responses[message.id] = cb
         @socket.send JSON.stringify message
         return message
 
-    method: (service, method, args..., cb) ->
-        cb.once = true
+    method: (method, args..., cb) ->
+        cb?.once = true
         @send {
             kind: 'method'
-            service, method, args
+            method, args
         }, (message) ->
             cb message.error, message.response, message
 
-    subscribe: (service, type, args..., cb) ->
+    subscribe: (type, args..., cb) ->
         @send {
             kind: 'subscribe'
-            service, type, args
+            type, args
         }, (message) ->
             cb message.error, message.event, message
 
-    unsubscribe: (service, id) ->
+    unsubscribe: (id) ->
         @send {
             kind: 'unsubscribe'
-            service, id
+            id
         }
 
     publish: (type, event) ->
@@ -155,7 +156,7 @@ module.exports = class Connection extends EventEmitter
         @pongTimeoutTimeout = setTimeout @pongDidTimeout.bind(@), PING_INTERVAL
 
         ping = if @last_ping? then 'ping' else 'hello'
-        message = {id: @last_ping?.id, kind: 'ping', ping}
+        message = {id: @last_ping?.id, kind: 'ping', ping, service: @service?.id}
         @last_ping = @send message, @handlePong.bind(@)
 
     handlePong: (message) ->
