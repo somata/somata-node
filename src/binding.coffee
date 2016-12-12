@@ -84,9 +84,8 @@ module.exports = class Binding extends EventEmitter
             @emit message.kind, client_id, message
 
     handlePing: (client_id, message) ->
-        if message.ping == 'hello' or @known_pings[client_id] != message.id
-            @known_pings[client_id] = message.id
-            @clearSubscriptions(client_id)
+        if message.ping == 'hello' or !@known_pings[message.id]?
+            @known_pings[message.id] = true
             @emitNext 'connected', client_id
             pong = 'welcome'
         else

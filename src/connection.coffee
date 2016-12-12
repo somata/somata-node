@@ -34,13 +34,8 @@ module.exports = class Connection extends EventEmitter
         Object.assign @, options
 
         @id ||= helpers.randomString()
-
         @proto ||= DEFAULT_PROTO
         @host ||= DEFAULT_CONNECT
-
-        # TODO: Host overwrite no longer necessary with bridges(?)
-        if @host == '0.0.0.0'
-            @host = DEFAULT_CONNECT
 
         @address = helpers.makeAddress @proto, @host, @port
 
@@ -89,7 +84,6 @@ module.exports = class Connection extends EventEmitter
 
         else
             log.w '[handleMessage] No pending response for ' + message.id if VERBOSE
-            log.w '[handleMessage] No pending response for', message
 
     handleMethod: (message) ->
         log.d "[Connection.on method]", message if VERBOSE
@@ -101,7 +95,6 @@ module.exports = class Connection extends EventEmitter
 
     handleSubscribe: (subscription) ->
         log.d '[Connection.on subscribe]', subscription if VERBOSE
-        log.d '[Connection.on subscribe]', subscription
         @subscriptions[subscription.type] ||= {}
         @subscriptions[subscription.type][subscription.id] = subscription
 
@@ -165,7 +158,7 @@ module.exports = class Connection extends EventEmitter
             return
 
         if message.pong == 'welcome'
-            log.i "[Connection.handlePong] #{helpers.summarizeConnection(@)} New ping response" if VERBOSE or true
+            log.i "[Connection.handlePong] #{helpers.summarizeConnection(@)} New ping response" if VERBOSE
             is_new = !@last_pong?
             @clearSubscriptions()
             @emit 'connect', is_new

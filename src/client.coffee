@@ -40,14 +40,12 @@ class Client extends EventEmitter
 
     deregisteredService: (err, old_service) ->
         log.d '[Client.registry_connection.deregister]', old_service if VERBOSE > 1
-        delete @service_connections[old_service.id]
+        delete @service_connections[old_service.name]
 
-        if subscriptions = @service_subscriptions[old_service.id]
-            console.log 'subs', subscriptions[0]
-            subscriptions.filter((s) -> s.service == old_service.id).forEach (subscription) =>
-                @resubscribe(subscription)
+        # TODO: Remove existing subscriptions
 
     # Main API of remote and subscribe
+    # --------------------------------------------------------------------------
 
     remote: (service, method, args..., cb) ->
         log.d "[Client.remote] #{service}.#{method}(#{args})"
@@ -59,58 +57,64 @@ class Client extends EventEmitter
                 cb 'No connection'
 
     subscribe: (service, type, args..., cb) ->
-        if arguments.length == 2 # (options, cb) ->
-            options = arguments[0]
-            cb = arguments[1]
-            {id, service, type, args} = options
+        if arguments.length == 1 # (options, cb) ->
+            subscription = arguments[0]
+            {id, service, type, args, cb} = subscription
         id ||= helpers.randomString()
 
         if !@connected_to_registry
-            setTimeout (=> @subscribe {id, service, type, args}, cb), 500
+            setTimeout (=> @subscribe {id, service, type, args, cb}), 500
             return
 
-        @getConnection service, (err, connection) =>
+        if typeof service == 'object'
+            service_name = service.name
+        else
+            service_name = service.split('~')[0]
+
+        @getConnection service_name, (err, connection) =>
             if connection?
                 log.i '[Client.subscribe]', service, type, args if VERBOSE
-                # s = new Subscription {id, service, type, args, cb}
-                # s.subscribe connection
-                # s.on type, cb
-                connection.on 'connect', =>
-                    s = connection.subscribe type, args..., cb
-                    s.cb = cb
-                    @service_subscriptions[connection.service.id] ||= []
-                    @service_subscriptions[connection.service.id].push s
+                subscription = {id, service: connection.service.id, kind: 'subscribe', type, args}
+
+                connection.on 'connect', => @sendSubscription connection, subscription, cb
+
+                connection.on 'timeout', =>
+                    log.e "[Client.subscribe.connection.on timeout] #{helpers.summarizeConnection connection}"
+                    delete @service_subscriptions[connection.service.id]
+                    setTimeout =>
+                        @subscribe service, type, args..., cb
+                    , 500
+
             else
                 log.e '[Client.subscribe] No connection'
                 _subscribe = => @subscribe service, type, args..., cb
                 setTimeout _subscribe, 1500
 
-    resubscribe: (subscription) ->
-        @getConnection subscription.service, (err, connection) =>
-            if connection?
-                connection.on 'connect', =>
-                    connection.subscribe subscription.type, subscription.args..., subscription.cb
-            else
-                log.e '[Client.resubscribe] no connection'
-                _resubscribe = => @resubscribe subscription
-                setTimeout _resubscribe, 1500
+    sendSubscription: (connection, subscription, cb) ->
+        eventCb = (message) -> cb message.error, message.event, message
+        delete subscription.cb
+        connection.send subscription, eventCb
+        subscription.cb = cb
+        @service_subscriptions[subscription.service.id] ||= []
+        @service_subscriptions[subscription.service.id].push subscription
 
     # Connections to Services
+    # --------------------------------------------------------------------------
 
-    getService: (service_id, cb) ->
-        @registry_connection.method 'getService', service_id, cb
+    getService: (service_name, cb) ->
+        @registry_connection.method 'getService', service_name, cb
 
     getConnection: (service_id, cb) ->
+        service_name = service_id.split('~')[0]
 
-        if service_id.match /^registry/
+        if service_name == 'registry'
             return cb null, @registry_connection
 
-        else if connection = @service_connections[service_id]
+        else if connection = @service_connections[service_name]
             return cb null, connection
 
         else
-            @getService service_id.split('~')[0], (err, service) =>
-
+            @getService service_name, (err, service) =>
                 if err or !service?
                     return cb err
 
@@ -118,25 +122,11 @@ class Client extends EventEmitter
                     host: service.host
                     port: service.port
                     service: service
-                @service_connections[service_id] = connection
+                @service_connections[service_name] = connection
 
                 connection.on 'timeout', =>
-                    log.e "[Client.connection.on timeout] #{service_id}"
-
-                    if !connection.keepalive
-                        log.w "[Client.connection.on timeout] #{service_id} Closing connection"
-                        delete @service_connections[service_id]
-
-                        if subscriptions = @service_subscriptions[service_id]
-                            for subscription in subscriptions
-                                connection.unsubscribe subscription.id
-                                setTimeout =>
-                                    @subscribe subscription.service, subscription.type, subscription.cb
-                                , 1500
-                                # @resubscribe(subscription)
-                            delete @service_subscriptions[service_id]
-
-                        connection.close()
+                    delete @service_connections[service_name]
+                    connection.close()
 
                 cb null, connection
 
