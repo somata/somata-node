@@ -184,7 +184,7 @@ module.exports = class SomataService extends EventEmitter
             proto: @registry_proto or REGISTRY_PROTO
             host: @registry_host or REGISTRY_HOST
             port: @registry_port or REGISTRY_PORT
-        @registry_connection.service_instance = {id: 'registry', name: 'registry'}
+            service: {id: 'registry~s', name: 'registry'}
         @registry_connection.on 'connect', @registryConnected.bind(@)
 
     registryConnected: ->

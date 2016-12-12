@@ -12,7 +12,6 @@ CONNECTION_LINGER_MS = 1500
 CONNECTION_RETRY_MS = 2500
 
 class Client extends EventEmitter
-    known_services: {}
     service_subscriptions: {}
     service_connections: {}
 
@@ -38,18 +37,14 @@ class Client extends EventEmitter
 
     registeredService: (err, new_service) ->
         log.d '[Client.registry_connection.register]', new_service if VERBOSE > 1
-        @known_services[new_service.name] ||= {}
-        @known_services[new_service.name][new_service.id] = new_service
 
     deregisteredService: (err, old_service) ->
         log.d '[Client.registry_connection.deregister]', old_service if VERBOSE > 1
-        delete @service_connections[old_service.name]
-        if known = @known_services[old_service.name]?[old_service.id]
-            delete @known_services[old_service.name][old_service.id]
+        delete @service_connections[old_service.id]
 
-        if subscriptions = @service_subscriptions[old_service.name]
+        if subscriptions = @service_subscriptions[old_service.id]
+            console.log 'subs', subscriptions[0]
             subscriptions.filter((s) -> s.service == old_service.id).forEach (subscription) =>
-                # subscription.unsubscribe()
                 @resubscribe(subscription)
 
     # Main API of remote and subscribe
@@ -68,8 +63,7 @@ class Client extends EventEmitter
             options = arguments[0]
             cb = arguments[1]
             {id, service, type, args} = options
-        else
-            id = helpers.randomString()
+        id ||= helpers.randomString()
 
         if !@connected_to_registry
             setTimeout (=> @subscribe {id, service, type, args}, cb), 500
@@ -77,14 +71,15 @@ class Client extends EventEmitter
 
         @getConnection service, (err, connection) =>
             if connection?
-                log.s '[Client.subscribe]', service, type, args
+                log.i '[Client.subscribe]', service, type, args if VERBOSE
                 # s = new Subscription {id, service, type, args, cb}
                 # s.subscribe connection
                 # s.on type, cb
-                s = connection.subscribe type, args..., cb
-                s.cb = cb
-                @service_subscriptions[service] ||= []
-                @service_subscriptions[service].push s
+                connection.on 'connect', =>
+                    s = connection.subscribe type, args..., cb
+                    s.cb = cb
+                    @service_subscriptions[connection.service.id] ||= []
+                    @service_subscriptions[connection.service.id].push s
             else
                 log.e '[Client.subscribe] No connection'
                 _subscribe = => @subscribe service, type, args..., cb
@@ -93,7 +88,8 @@ class Client extends EventEmitter
     resubscribe: (subscription) ->
         @getConnection subscription.service, (err, connection) =>
             if connection?
-                connection.send subscription
+                connection.on 'connect', =>
+                    connection.subscribe subscription.type, subscription.args..., subscription.cb
             else
                 log.e '[Client.resubscribe] no connection'
                 _resubscribe = => @resubscribe subscription
