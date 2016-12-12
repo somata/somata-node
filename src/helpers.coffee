@@ -4,6 +4,13 @@ _ = require 'underscore'
 moment = require 'moment'
 ansi = require('ansi')(process.stdout, {enabled: true})
 
+# Get values like Object.keys
+exports.values = (object) ->
+    vs = []
+    for k, v of object
+        vs.push v
+    return vs
+
 # Format the current date for logging
 date_format = 'YYYY-MM-DD hh:mm:ss'
 logDate = ->
@@ -58,6 +65,7 @@ exports.summarizeService = (service) ->
 
 # Create a proto://host:port address
 exports.makeAddress = (proto, host, port) ->
+    port = parseInt port
     address = proto + '://' + host
     address += ':' + port if proto != 'ipc'
     return address

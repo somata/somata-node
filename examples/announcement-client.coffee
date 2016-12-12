@@ -1,13 +1,9 @@
-somata = require '../src'
-# somata = require '../lib'
-# somata = require 'somata'
-log = somata.helpers.log
-util = require 'util'
+somata = require 'somata'
 
 # Create a new Somata client
 announcement_client = new somata.Client
 
-# Execute the 'announcement' service's `sayannouncement` method with the argument 'world' ...
-announcement_client.on 'announcement', 'announcement', (message) ->
-    log.s message
+# Watch the 'announcement' service for 'announce' events...
+announcement_client.subscribe 'announcement', 'announce', (err, message) ->
+    console.log 'announcement service did announce:', message
 

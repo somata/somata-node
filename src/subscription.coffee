@@ -15,15 +15,13 @@ class Subscription extends EventEmitter
         log.d '[Subscription.handleEvent]', arguments if VERBOSE > 2
         @emit @type, message
 
-    subscribe: (connection, options={}) ->
+    subscribe: (connection) ->
         @connection = connection
         log.i "[Subscription.subscribe] #{@id} <#{@connection.id}>"
         @connection.sendSubscribe @id, @service, @type, @args, @handleEvent
 
         @resubscribe = @_resubscribe.bind(@)
-
-        if options.keepalive
-            @connection.on 'reconnect', @resubscribe
+        @connection.on 'reconnect', @resubscribe
 
     _resubscribe: ->
         log.i "[Subscription.resubscribe] #{@id} <#{@connection.id}>" if VERBOSE

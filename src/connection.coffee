@@ -2,7 +2,6 @@ zmq = require 'zmq'
 util = require 'util'
 _ = require 'underscore'
 {EventEmitter} = require 'events'
-Subscription = require './subscription'
 helpers = require './helpers'
 {log} = helpers
 
@@ -21,6 +20,7 @@ module.exports = class Connection extends EventEmitter
     # message as its argument.
 
     pending_responses: {}
+    subscriptions: {}
 
     # Create a new Somata connection
     # --------------------------------------------------------------------------
@@ -34,18 +34,12 @@ module.exports = class Connection extends EventEmitter
         Object.assign @, options
 
         @id ||= helpers.randomString()
-
         @proto ||= DEFAULT_PROTO
         @host ||= DEFAULT_CONNECT
-
-        # TODO: Host overwrite no longer necessary with bridges(?)
-        if @host == '0.0.0.0'
-            @host = DEFAULT_CONNECT
 
         @address = helpers.makeAddress @proto, @host, @port
 
         @connect()
-        @sendPing()
 
     # Create and connect the connection socket
     # --------------------------------------------------------------------------
@@ -61,103 +55,89 @@ module.exports = class Connection extends EventEmitter
 
         log.i "[Connection.connect] #{helpers.summarizeConnection(@)} connected to #{@address}..." if VERBOSE
 
-    # Handle a message from the connected-to service
+        @connected()
+
+    connected: ->
+        @on 'method', @handleMethod.bind(@)
+        @on 'subscribe', @handleSubscribe.bind(@)
+        @sendPing()
+
+    # Incoming messages (from a connected-to Binding)
     # --------------------------------------------------------------------------
-    #
-    # If the message ID exists in the pending responses hash, pass the stored
-    # callback the message.
 
     handleMessage: (message) ->
         log.d "[Connection.handleMessage] #{helpers.summarizeConnection(@)} #{helpers.summarizeMessage(message)}" if VERBOSE > 1
+
         if on_response = @pending_responses[message.id]
+
             # Clear timeout if it exists
             if on_response.timeout?
                 clearTimeout on_response.timeout
 
-            # Response events: 'response' and 'error'
-            if message.kind == 'response'
-                on_response(null, message.response)
-                delete @pending_responses[message.id]
-            else if message.kind == 'error'
-                on_response(message.error, null)
+            if on_response.once
                 delete @pending_responses[message.id]
 
-            # Subscription events: 'event' and 'end'
-            else if message.kind == 'event'
-                on_response(message.event)
-            else if message.kind == 'end'
-                on_response(null, true)
-                delete @pending_responses[message.id]
+            on_response(message)
+
+        else if message.kind?
+            @emit message.kind, message
 
         else
             log.w '[handleMessage] No pending response for ' + message.id if VERBOSE
 
-    # Send a message to the connected-to service
-    # --------------------------------------------------------------------------
-    #
-    # A callback may be passed to handle a response from the service. An ID is
-    # generated for and attached to the message so that the service may respond
-    # with the same ID when it has a response.
+    handleMethod: (message) ->
+        log.d "[Connection.on method]", message if VERBOSE
+        if method = @methods?[message.method]
+            response = method message.args..., (err, response) =>
+                @send {id: message.id, kind: 'response', response}
+        else
+            @send {id: message.id, kind: 'error', error: "Unknown method"}
 
-    setPending: (message_id, on_response) ->
+    handleSubscribe: (subscription) ->
+        log.d '[Connection.on subscribe]', subscription if VERBOSE
+        @subscriptions[subscription.type] ||= {}
+        @subscriptions[subscription.type][subscription.id] = subscription
 
-        # Optionally create timeout handler
-        if @timeout_ms
-            dotimeout = =>
-                log.e "[TIMEOUT] Timing out request #{ message_id }"
-                on_response(timeout: @timeout_ms, message: "Timed out")
-                delete @pending_responses[message_id]
-            on_response.timeout = setTimeout dotimeout, @timeout_ms
+    handleUnsubscribe: (unsubscription) ->
+        # TODO
 
-        # Save the response in the pending hash
-        @pending_responses[message_id] = on_response
-
-    # Constructing and sending messages
+    # Outgoing messages
     # --------------------------------------------------------------------------
 
-    send: (message, on_response) ->
+    send: (message, cb) ->
         message.id ||= helpers.randomString 16
-        message.service ||= @service_instance?.name
-        if on_response?
-            @setPending message.id, on_response
+        message.service ||= @service?.id
+        if cb?
+            @pending_responses[message.id] = cb
         @socket.send JSON.stringify message
         return message
 
-    sendMethod: (id, method_name, args, cb) ->
-        method_msg =
-            id: id
+    method: (method, args..., cb) ->
+        cb?.once = true
+        @send {
             kind: 'method'
-            method: method_name
-            args: args
-        @send method_msg, cb
+            method, args
+        }, (message) ->
+            cb message.error, message.response, message
 
-    sendSubscribe: (id, service, type, args, cb) ->
-        subscribe_msg =
-            id: id
+    subscribe: (type, args..., cb) ->
+        @send {
             kind: 'subscribe'
-            service: service
-            type: type
-            args: args
-        @send subscribe_msg, cb
+            type, args
+        }, (message) ->
+            cb message.error, message.event, message
 
-    resendSubscribe: (subscription) ->
-        existing_cb = @pending_responses[subscription.id]
-        delete @pending_responses[subscription.id]
-        subscribe_msg =
-            id: subscription.id
-            kind: 'subscribe'
-            service: subscription.service
-            type: subscription.type
-            args: subscription.args
-        @send subscribe_msg, existing_cb
-
-    sendUnsubscribe: (id, type) ->
-        unsubscribe_msg =
-            id: id
+    unsubscribe: (id) ->
+        @send {
             kind: 'unsubscribe'
-            type: type
-        @send unsubscribe_msg
-        delete @pending_responses[id]
+            id
+        }
+
+    publish: (type, event) ->
+        subscriptions = @subscriptions[type]
+        for subscription in helpers.values subscriptions
+            {id} = subscription
+            @send {id, type, event}
 
     # Ping logic, to keep track of the connected-to binding
     # --------------------------------------------------------------------------
@@ -166,37 +146,51 @@ module.exports = class Connection extends EventEmitter
     last_pong: null
 
     sendPing: ->
-        clearTimeout @pingTimeoutTimeout
-        @pingTimeoutTimeout = setTimeout @pingDidTimeout.bind(@), PING_INTERVAL
+        @pongTimeoutTimeout = setTimeout @pongDidTimeout.bind(@), PING_INTERVAL
 
-        ping = {id: @last_ping?.id, kind: 'ping'}
-        @last_ping = @send ping, @handlePing
+        ping = if @last_pong? then 'ping' else 'hello'
+        message = {id: @last_ping?.id, kind: 'ping', ping, service: @service?.id}
+        @last_ping = @send message, @handlePong.bind(@)
 
-    handlePing: (err, pong) =>
-        return if @closed
+    handlePong: (message) ->
+        if @closed
+            log.e '[handlePong] Closed connection'
+            return
 
-        if pong == 'hello'
-            log.i "[Connection.handlePing] #{helpers.summarizeConnection(@)} New ping response" if VERBOSE
-            if @last_pong?
-                @emit 'reconnect'
-            else
-                @emit 'connect'
+        if message.pong == 'welcome'
+            log.i "[Connection.handlePong] #{helpers.summarizeConnection(@)} New ping response" if VERBOSE
+            is_new = !@last_pong?
+            @clearSubscriptions()
+            @emit 'connect', is_new
             @last_pong = new Date()
 
         else
-            log.d "[Connection.handlePing] #{helpers.summarizeConnection(@)} Continuing ping" if VERBOSE > 1
+            log.d "[Connection.handlePong] #{helpers.summarizeConnection(@)} Continuing ping" if VERBOSE > 2
+            @last_pong = new Date()
 
-        clearTimeout @pingTimeoutTimeout
+        clearTimeout @pongTimeoutTimeout
         @nextPingTimeout = setTimeout @sendPing.bind(@), PING_INTERVAL
 
-    pingDidTimeout: ->
-        log.e "[Connection.pingDidTimeout] #{helpers.summarizeConnection(@)}"
-        @nextPingTimeout = setTimeout @sendPing.bind(@), PING_INTERVAL * 2
+    pongDidTimeout: ->
+        log.e "[Connection.pongDidTimeout] #{helpers.summarizeConnection(@)}"
+        # @nextPingTimeout = setTimeout @sendPing.bind(@), PING_INTERVAL * 2
+        delete @last_ping
+        delete @last_pong
+        @clearSubscriptions()
         @emit 'timeout'
 
+    clearSubscriptions: ->
+        for subscription_type, subscriptions of @subscriptions
+            for subscription_id, subscription of subscriptions
+                delete @subscriptions[subscription_type][subscription_id]
+                delete @pending_responses[subscription_id]
+
     close: ->
+        log.e "[Connection.close] #{helpers.summarizeConnection(@)}"
+        delete @last_ping
+        delete @last_pong
         clearTimeout @nextPingTimeout
-        clearTimeout @pingTimeoutTimeout
+        clearTimeout @pongTimeoutTimeout
         @closed = true
         @socket.close()
 
