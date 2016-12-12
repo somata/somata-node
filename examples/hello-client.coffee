@@ -1,6 +1,4 @@
-somata = require '../src'
-# somata = require '../lib'
-# somata = require 'somata'
+somata = require 'somata'
 log = somata.helpers.log
 
 # Create a new Somata client
