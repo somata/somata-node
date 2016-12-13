@@ -35,6 +35,8 @@ class Client extends EventEmitter
         @registry_connection.subscribe 'register', @registeredService.bind(@)
         @registry_connection.subscribe 'deregister', @deregisteredService.bind(@)
 
+        @emit 'registry_connected', true
+
     registeredService: (err, new_service) ->
         log.d '[Client.registry_connection.register]', new_service if VERBOSE > 1
 
@@ -73,10 +75,13 @@ class Client extends EventEmitter
 
         @getConnection service_name, (err, connection) =>
             if connection?
-                log.i '[Client.subscribe]', service, type, args if VERBOSE
+                log.i '[Client.subscribe]', {service, type, args} if VERBOSE
                 subscription = {id, service: connection.service.id, kind: 'subscribe', type, args}
 
-                connection.on 'connect', => @sendSubscription connection, subscription, cb
+                if connection.connected
+                    @sendSubscription connection, subscription, cb
+                else
+                    connection.on 'connect', => @sendSubscription connection, subscription, cb
 
                 connection.on 'timeout', =>
                     log.e "[Client.subscribe.connection.on timeout] #{helpers.summarizeConnection connection}"

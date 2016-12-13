@@ -161,6 +161,7 @@ module.exports = class Connection extends EventEmitter
             log.i "[Connection.handlePong] #{helpers.summarizeConnection(@)} New ping response" if VERBOSE
             is_new = !@last_pong?
             @clearSubscriptions()
+            @connected = true
             @emit 'connect', is_new
             @last_pong = new Date()
 
@@ -177,6 +178,7 @@ module.exports = class Connection extends EventEmitter
         delete @last_ping
         delete @last_pong
         @clearSubscriptions()
+        @connected = false
         @emit 'timeout'
 
     clearSubscriptions: ->
