@@ -60,7 +60,9 @@ module.exports = class Connection extends EventEmitter
     connected: ->
         @on 'method', @handleMethod.bind(@)
         @on 'subscribe', @handleSubscribe.bind(@)
-        @sendPing()
+
+        process.nextTick =>
+            @sendPing()
 
     # Incoming messages (from a connected-to Binding)
     # --------------------------------------------------------------------------
