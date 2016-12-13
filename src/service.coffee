@@ -74,8 +74,6 @@ module.exports = class SomataService extends EventEmitter
         method_name = message.method
         if _method = @getMethod method_name
 
-            log 'Executing ' + method_name if VERBOSE > 1
-
             # Execute the named method with given arguments
             try
                 _method message.args..., (err, response) =>
@@ -92,12 +90,12 @@ module.exports = class SomataService extends EventEmitter
                     e instanceof TypeError &&
                     err.slice(11) == 'undefined is not a function'
                         err = "ArityError? method `#{method_name}` takes #{_method.length-1} arguments."
-                log.e '[ERROR] ' + err
+                log.e '[Service.handleMethod] ERROR:' + err
                 console.error e.stack
                 @sendError client_id, message.id, err
 # Method not found for this service
         else
-            log.e '[ERROR] No method ' + message.method
+            log.e '[Service.handleMethod] ERROR: No method ' + message.method
             @sendError client_id, message.id, "No method " + message.method
 
     # Finding a method from the methods hash
@@ -128,7 +126,7 @@ module.exports = class SomataService extends EventEmitter
         event_name = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join('::')
-        log.i "[Service.handleSubscribe] Subscribing #{client_id} <#{subscription_key}>"
+        log.i "[Service.handleSubscribe] Subscribing #{client_id} <#{subscription_key}>" if VERBOSE
         @subscriptions_by_event_name[event_name] ||= []
         if subscription_key not in @subscriptions_by_event_name[event_name]
             @subscriptions_by_event_name[event_name].push subscription_key
@@ -139,7 +137,7 @@ module.exports = class SomataService extends EventEmitter
         event_name = message.type
         subscription_id = message.id
         subscription_key = [client_id, subscription_id].join('::')
-        log.w "[Service.handleUnsubscribe] Unsubscribing <#{subscription_key}>"
+        log.w "[Service.handleUnsubscribe] Unsubscribing <#{subscription_key}>" if VERBOSE
         # TODO: Improve how subscriptions are stored
         for event_name, subscription_keys of @subscriptions_by_event_name
             @subscriptions_by_event_name[event_name] = _.without subscription_keys, subscription_key

@@ -35,31 +35,31 @@ module.exports = class Binding extends EventEmitter
     tryBind: (n_retried=0) ->
         try
             @address = helpers.makeAddress @proto, @host, @port
-            log.d "[tryBind] Attempting to bind on #{@address}..." if VERBOSE
+            log.d "[Binding.tryBind] Attempting to bind on #{@address}..." if VERBOSE
             @socket = zmq.socket 'router'
             @socket.bindSync @address
             @didBind()
 
         catch err
-            log.e "[tryBind] Failed to bind on #{@address}", err
+            log.e "[Binding.tryBind] Failed to bind on #{@address}", err
 
             if !@should_retry
                 process.exit()
 
             else if n_retried < MAX_BIND_RETRIES
-                log.w "[tryBind] Retrying..."
+                log.w "[Binding.tryBind] Retrying..."
                 @port = helpers.randomPort()
                 setTimeout =>
                     @tryBind(n_retried+1)
                 , 1000
 
             else
-                log.e "[tryBind] Retried too many times."
+                log.e "[Binding.tryBind] Retried too many times."
                 process.exit()
 
     didBind: ->
         # Announce that it did bind
-        log.i "[didBind] Socket #{@id} bound to #{@address}" if VERBOSE
+        log.i "[Binding.didBind] Socket #{@id} bound to #{@address}" if VERBOSE
         @emitNext 'bind'
 
         # Start handling messages
@@ -76,7 +76,7 @@ module.exports = class Binding extends EventEmitter
     # --------------------------------------------------------------------------
 
     handleMessage: (client_id, message) ->
-        log.d "[binding.handleMessage] <#{client_id}> #{helpers.summarizeMessage message}" if VERBOSE > 1
+        log.d "[Binding.handleMessage] <#{client_id}> #{helpers.summarizeMessage message}" if VERBOSE > 1
         if cb = @pending_responses[client_id]?[message.id]
             cb message
 
@@ -115,11 +115,11 @@ module.exports = class Binding extends EventEmitter
     pingDidTimeout: (client_id) ->
         @clearSubscriptions(client_id)
         delete @known_pings[client_id]
-        log.e 'Binding.on client timeout', client_id
+        log.w '[Binding.pingDidTimeout]', client_id if VERBOSE
         @emit 'timeout', client_id
 
     handleMethod: (client_id, message) ->
-        log.d "[Binding.on method]", message if VERBOSE
+        log.d "[Binding.handleMethod]", message if VERBOSE
         if message.service?
             # Ignore as it was meant for a service
         else if method = @methods?[message.method]
@@ -129,13 +129,13 @@ module.exports = class Binding extends EventEmitter
             @send client_id, {id: message.id, kind: 'error', error: "Unknown method '#{message.method}'"}
 
     handleSubscribe: (client_id, subscription) ->
-        log.d '[Binding.on subscribe]', client_id, subscription if VERBOSE
+        log.d '[Binding.handleSubscribe]', client_id, subscription if VERBOSE
         subscription.client_id = client_id
         @subscriptions[subscription.type] ||= {}
         @subscriptions[subscription.type][subscription.id] = subscription
 
     handleUnsubscribe: (client_id, unsubscription) ->
-        log.d '[Binding.on unsubscribe]', client_id, unsubscription if VERBOSE
+        log.d '[Binding.handleUsubscribe]', client_id, unsubscription if VERBOSE
         delete @subscriptions[unsubscription.type]?[unsubscription.id]
 
     # Outgoing messages

@@ -50,12 +50,12 @@ class Client extends EventEmitter
     # --------------------------------------------------------------------------
 
     remote: (service, method, args..., cb) ->
-        log.d "[Client.remote] #{service}.#{method}(#{args})"
+        log.d "[Client.remote] #{service}.#{method}(#{args})" if VERBOSE > 1
         @getConnection service, (err, connection) =>
             if connection?
                 connection.method method, args..., cb
             else
-                log.e '[Client.remote] No connection'
+                log.e "[Client.remote] No connection for #{service}"
                 cb 'No connection'
 
     subscribe: (service, type, args..., cb) ->
@@ -84,7 +84,7 @@ class Client extends EventEmitter
                     connection.on 'connect', => @sendSubscription connection, subscription, cb
 
                 connection.on 'timeout', =>
-                    log.e "[Client.subscribe.connection.on timeout] #{helpers.summarizeConnection connection}"
+                    log.e "[Client.subscribe.connection.on timeout] #{helpers.summarizeConnection connection}" if VERBOSE
                     delete @service_subscriptions[connection.service.id]
                     setTimeout =>
                         @subscribe service, type, args..., cb

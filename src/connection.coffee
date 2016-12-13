@@ -53,7 +53,7 @@ module.exports = class Connection extends EventEmitter
         @socket.on 'message', (message_json) =>
             @handleMessage JSON.parse message_json
 
-        log.i "[Connection.connect] #{helpers.summarizeConnection(@)} connected to #{@address}..." if VERBOSE
+        log.i "[Connection.connect] #{helpers.summarizeConnection(@)} connected to #{@address}" if VERBOSE
 
         @connected()
 
@@ -154,7 +154,7 @@ module.exports = class Connection extends EventEmitter
 
     handlePong: (message) ->
         if @closed
-            log.e '[handlePong] Closed connection'
+            log.e '[handlePong] Connection is closed' if VERBOSE
             return
 
         if message.pong == 'welcome'
