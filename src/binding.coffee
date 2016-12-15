@@ -135,7 +135,7 @@ module.exports = class Binding extends EventEmitter
         @subscriptions[subscription.type][subscription.id] = subscription
 
     handleUnsubscribe: (client_id, unsubscription) ->
-        log.d '[Binding.handleUsubscribe]', client_id, unsubscription if VERBOSE
+        log.d '[Binding.handleUnsubscribe]', client_id, unsubscription if VERBOSE
         delete @subscriptions[unsubscription.type]?[unsubscription.id]
 
     # Outgoing messages
@@ -160,7 +160,13 @@ module.exports = class Binding extends EventEmitter
             kind: 'subscribe'
             type, args
         }, (message) ->
-            cb message.error, message.event, message
+            cb message.error or message.event, message
+
+    unsubscribe: (client_id, type, id, cb) ->
+        @send client_id, {
+            kind: 'unsubscribe'
+            type, id
+        }
 
     publish: (type, event) ->
         subscriptions = @subscriptions[type]

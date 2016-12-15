@@ -127,12 +127,12 @@ module.exports = class Connection extends EventEmitter
             kind: 'subscribe'
             type, args
         }, (message) ->
-            cb message.error, message.event, message
+            cb message.error or message.event, message
 
-    unsubscribe: (id) ->
+    unsubscribe: (type, id) ->
         @send {
             kind: 'unsubscribe'
-            id
+            type, id
         }
 
     publish: (type, event) ->

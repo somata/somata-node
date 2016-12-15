@@ -12,6 +12,7 @@ CONNECTION_LINGER_MS = 1500
 CONNECTION_RETRY_MS = 2500
 
 class Client extends EventEmitter
+    subscriptions: {}
     service_subscriptions: {}
     service_connections: {}
 
@@ -59,7 +60,7 @@ class Client extends EventEmitter
                 cb 'No connection'
 
     subscribe: (service, type, args..., cb) ->
-        if arguments.length == 1 # (options, cb) ->
+        if arguments.length == 1 # options containing cb
             subscription = arguments[0]
             {id, service, type, args, cb} = subscription
         id ||= helpers.randomString()
@@ -95,13 +96,21 @@ class Client extends EventEmitter
                 _subscribe = => @subscribe service, type, args..., cb
                 setTimeout _subscribe, 1500
 
+    unsubscribe: (subscription_id) ->
+        if subscription = @subscriptions[subscription_id]
+            @getConnection subscription.service, (err, connection) ->
+                if connection?
+                    log.w '[Client.unsubscribe]', subscription_id if VERBOSE
+                    connection.unsubscribe(subscription.type, subscription.id)
+
     sendSubscription: (connection, subscription, cb) ->
-        eventCb = (message) -> cb message.error, message.event, message
+        eventCb = (message) -> cb message.error or message.event, message
         delete subscription.cb
         connection.send subscription, eventCb
         subscription.cb = cb
         @service_subscriptions[subscription.service.id] ||= []
         @service_subscriptions[subscription.service.id].push subscription
+        @subscriptions[subscription.id] = subscription
 
     # Connections to Services
     # --------------------------------------------------------------------------
