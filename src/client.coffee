@@ -38,10 +38,10 @@ class Client extends EventEmitter
 
         @emit 'registry_connected', true
 
-    registeredService: (err, new_service) ->
+    registeredService: (new_service) ->
         log.d '[Client.registry_connection.register]', new_service if VERBOSE > 1
 
-    deregisteredService: (err, old_service) ->
+    deregisteredService: (old_service) ->
         log.d '[Client.registry_connection.deregister]', old_service if VERBOSE > 1
         delete @service_connections[old_service.name]
 
