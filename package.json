@@ -20,6 +20,9 @@
         "distributed"
     ],
     "main": "lib/index.js",
+    "scripts": {
+        "build": "coffee --bare -o lib -c src"
+    },
     "dependencies": {
         "ansi": "0.3.x",
         "async": "0.9.x",
