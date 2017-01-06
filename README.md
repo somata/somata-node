@@ -2,27 +2,41 @@
 
 Somata is a framework for building networked microservices, supporting both remote procedure call (RPC) and publish-subscribe models of communication. This is the Node version of the library, see also [somata-python](https://github.com/somata/somata-python) and [somata-lua](https://github.com/somata/somata-lua).
 
-* [Overview](#overview)
+* [At a glance](#at-a-glance)
 * [Installation](#installation)
 * [Getting started](#getting-started)
 
-## Overview
+## At a glance
 
-### Service vs. Client
+As an example of a the most basic Somata system, we'll make a single "hello" Service with a `sayHello` method, and call that method from a separate process using a Client.
 
-The two core classes of Somata are the *Service* and *Client*.
+![](https://i.imgur.com/mryWajd.png)
 
-![](https://i.imgur.com/b96c4ZJ.png)
+A **Service** has a name and set of named methods:
 
-A *Service* has a name and exposes a set of methods, and may publish events.
+```js
+var somata = require('somata');
 
-A *Client* manages connections to one or more Services, to call methods and subscribe to events.
+var hello_service = new somata.Service('hello', {
+    sayHello: function (name, cb) {
+        cb(null, 'Hello, ' + name + '!');
+    }
+});
+```
 
-### Service discovery
+To make requests to a Service you use a **Client**:
 
-Service discovery is managed by the [Somata Registry](https://github.com/somata/somata-registry), which is itself a specialized Service. A Service will send registration information (i.e. its name and binding port) to the Registry. When a Client calls a remote method, or creates a subscription, it first asks the Registry to look up the Service by name.
+```js
+var somata = require('somata');
 
-![](https://i.imgur.com/eOBtdBK.png)
+var hello_client = new somata.Client();
+
+hello_client.remote('hello', 'sayHello', 'world', function (err, response) {
+    console.log('Got response: ' + response);
+});
+```
+
+Read the [Somata Protocol Overview](https://github.com/somata/somata-protocol#overview) to learn more about how these pieces connect.
 
 ## Installation
 
