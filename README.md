@@ -2,6 +2,10 @@
 
 Somata is a framework for building networked microservices, supporting both remote procedure call (RPC) and publish-subscribe models of communication. This is the Node version of the library, see also [somata-python](https://github.com/somata/somata-python) and [somata-lua](https://github.com/somata/somata-lua).
 
+* [Overview](#overview)
+* [Installation](#installation)
+* [Getting started](#getting-started)
+
 ## Overview
 
 ### Service vs. Client
