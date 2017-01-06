@@ -8,9 +8,11 @@
         "url": "http://github.com/somata/somata-node.git"
     },
     "author": {
-        "name": "Prontotype",
+        "name": "Sean Robertson",
+        "company": "Prontotype",
         "url": "http://prontotype.us/"
     },
+    "license": "MIT",
     "keywords": [
         "somata",
         "micro",
