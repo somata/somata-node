@@ -1,82 +1,109 @@
-Somata
-=====
+# Somata for Node
 
-Somata is a framework for building microservices. This is the Node.js library, see also [somata-python](https://github.com/somata/somata-python) and [somata-go](https://github.com/somata/somata-go)
+Somata is a framework for building networked microservices, supporting both remote procedure call (RPC) and publish-subscribe models of communication. This is the Node version of the library, see also [somata-python](https://github.com/somata/somata-python) and [somata-lua](https://github.com/somata/somata-lua).
 
-# Usage
+## Overview
 
-Define a service with `new somata.Service(name, methods, [options])`:
+### Service vs. Client
 
-```js
-somata = require('somata');
+The two core classes of Somata are the *Service* and *Client*.
 
-// Create a new Somata service named 'hello'
-hello_service = new somata.Service('hello', {
+A *Service* has a name and exposes a set of methods, and may publish events.
 
-    // Exposing a single method `sayHello`
-    sayHello: function (name, cb) {
-        cb(null, 'Hello, ' + name + '!');
-    }
+A *Client* manages connections to one or more Services, to call methods and subscribe to events.
 
-});
-```
+### Service discovery
 
-Define a client with `new somata.Client([options])`:
+Service discovery is managed by the [Somata Registry](https://github.com/somata/somata-registry), which is itself a specialized Service. A Service will send registration information (i.e. its name and binding port) to the Registry. When a Client calls a remote method, or creates a subscription, it first asks the Registry to look up the Service by name.
 
-```js
-somata = require('somata');
+## Installation
 
-// Create a new Somata client
-hello_client = new somata.Client();
-
-// Call the 'hello' service's `sayHello` method
-hello_client.remote('hello', 'sayHello', 'world', function (err, response) {
-    console.log('Response: ' + response);
-});
-```
-
-Start the service, then run the client:
+Somata requires the [Node.js ZeroMQ library](https://github.com/JustinTulloss/zeromq.node), which requires [ZeroMQ](http://zeromq.org/) libraries - install those with your system package manager:
 
 ```sh
-$ node hello-service.js &
-Somata service listening on localhost:15555...
-
-$ node hello-client.js
-Found service hello@localhost:15555
-[hello.sayHello] response: Hello, world!
+$ sudo apt-get install libzmq-dev
 ```
 
-# Installation
-
-## Dependencies
-
-Install ZeroMQ, Node.js and NPM.
-
-```sh
-$ sudo apt-get install libzmq-dev nodejs npm
-$ sudo ln -s /usr/bin/nodejs /usr/bin/node # To fix node-gyp on Ubuntu
-```
-
-## Somata NPM module
-
-Install the Somata library locally, and the [Somata registry](https://github.com/somata/somata-registry) globally:
+Install the Somata library locally, and the [Somata Registry](https://github.com/somata/somata-registry) globally:
 
 ```sh
 $ npm install somata
 $ npm install -g somata-registry
 ```
 
-# Running
+## Getting started
 
-Start up the registry
+First make sure the Registry is [installed](https://github.com/somata/somata-registry#installation) and running:
 
 ```sh
 $ somata-registry
+[Registry] Bound to 127.0.0.1:8420
 ```
 
-Then try the hello example:
+### Creating a Service
 
+Create a Service using `new somata.Service(name, methods)`. The `methods` argument is an object of named functions; every function is asynchronous and takes a callback as its last argument. 
+
+A Service can publish events using `service.publish(type, data)`.
+
+This example (see [examples/hello-service.js](https://github.com/somata/somata-node/blob/master/examples/hello-service.js)) creates a Service named "hello" with a single method `sayHello(name, cb)`, and emits an event called `hi` every 2 seconds:
+
+```js
+var somata = require('somata');
+
+var hello_service = new somata.Service('hello', {
+    sayHello: function (name, cb) {
+        cb(null, 'Hello, ' + name + '!');
+    }
+});
+
+setInterval(function() {
+    hello_service.publish('hi', "Just saying hi.");
+}, 2000);
 ```
-$ coffee examples/hello-service.coffee &
-$ coffee examples/hello-client.coffee
+
+### Running a Service
+
+When a Service is started it will bind to a random port and register itself with the Registry:
+
+```sh
+$ node examples/hello-service.js
+Registered service `hello~9iuma73n` on tcp://127.0.0.1:15544
+```
+
+### Creating a Client
+
+Create a Client using `new somata.Client()`.
+
+Call a remote method of a Service using `client.remote(service, method, args..., cb)`. The callback takes two argments, `err` and `response`.
+
+Subscribe to events from a Service using `client.subscribe(service, type, cb)`. This callback takes one argument, the incoming `event`.
+
+This example (see [examples/hello-client.js](https://github.com/somata/somata-node/blob/master/examples/hello-client.js)) connects to the "hello" service, calls the `sayHello` method, and subscribes to its events:
+
+```js
+var somata = require('somata');
+
+var hello_client = new somata.Client();
+
+hello_client.remote('hello', 'sayHello', 'world', function (err, response) {
+    console.log('Got response: ' + response);
+});
+
+hello_client.subscribe('hello', 'hi', function (event) {
+    console.log('Got event: ' + event);
+});
+```
+
+### Running a Client
+
+Assuming the Registry and "hello" service are running, running the client call the "hello" service's remote method `sayHello` and subscribe to its `hi` events:
+
+```sh
+$ node examples/hello-client.js
+Got response: Hello, world!
+Got event: Just saying hi.
+Got event: Just saying hi.
+Got event: Just saying hi.
+^C
 ```
