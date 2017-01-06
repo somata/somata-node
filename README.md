@@ -12,7 +12,7 @@ Somata is a framework for building networked microservices, supporting both remo
 
 The two core classes of Somata are the *Service* and *Client*.
 
-![](https://i.imgur.com/jd7pQQm.png)
+![](https://i.imgur.com/b96c4ZJ.png)
 
 A *Service* has a name and exposes a set of methods, and may publish events.
 
@@ -21,6 +21,8 @@ A *Client* manages connections to one or more Services, to call methods and subs
 ### Service discovery
 
 Service discovery is managed by the [Somata Registry](https://github.com/somata/somata-registry), which is itself a specialized Service. A Service will send registration information (i.e. its name and binding port) to the Registry. When a Client calls a remote method, or creates a subscription, it first asks the Registry to look up the Service by name.
+
+![](https://i.imgur.com/eOBtdBK.png)
 
 ## Installation
 
