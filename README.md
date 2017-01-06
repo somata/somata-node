@@ -12,6 +12,8 @@ Somata is a framework for building networked microservices, supporting both remo
 
 The two core classes of Somata are the *Service* and *Client*.
 
+![](https://i.imgur.com/jd7pQQm.png)
+
 A *Service* has a name and exposes a set of methods, and may publish events.
 
 A *Client* manages connections to one or more Services, to call methods and subscribe to events.
