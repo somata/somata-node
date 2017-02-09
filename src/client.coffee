@@ -144,4 +144,9 @@ class Client extends EventEmitter
 
                 cb null, connection
 
+    closeConnections: ->
+        for service_name, connection of @service_connections
+            connection.close()
+        @registry_connection.close()
+
 module.exports = Client

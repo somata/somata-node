@@ -190,7 +190,7 @@ module.exports = class Connection extends EventEmitter
                 delete @pending_responses[subscription_id]
 
     close: ->
-        log.e "[Connection.close] #{helpers.summarizeConnection(@)}"
+        log.e "[Connection.close] #{helpers.summarizeConnection(@)}" if VERBOSE
         delete @last_ping
         delete @last_pong
         clearTimeout @nextPingTimeout
