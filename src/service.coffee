@@ -58,7 +58,7 @@ module.exports = class SomataService extends EventEmitter
             response: response
 
     sendError: (client_id, message_id, error) ->
-        if error.toString?
+        if error instanceof Error
             error = error.toString()
         @binding.send client_id,
             id: message_id
