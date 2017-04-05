@@ -148,7 +148,8 @@ module.exports = class Connection extends EventEmitter
     last_pong: null
 
     sendPing: ->
-        @pongTimeoutTimeout = setTimeout @pongDidTimeout.bind(@), PING_INTERVAL
+        return if @service.heartbeat == 0
+        @pongTimeoutTimeout = setTimeout @pongDidTimeout.bind(@), @service.heartbeat || PING_INTERVAL
 
         ping = if @last_pong? then 'ping' else 'hello'
         message = {id: @last_ping?.id, kind: 'ping', ping, service: @service?.id}
@@ -171,8 +172,9 @@ module.exports = class Connection extends EventEmitter
             log.d "[Connection.handlePong] #{helpers.summarizeConnection(@)} Continuing ping" if VERBOSE > 2
             @last_pong = new Date()
 
+        return if @service.heartbeat == 0
         clearTimeout @pongTimeoutTimeout
-        @nextPingTimeout = setTimeout @sendPing.bind(@), PING_INTERVAL
+        @nextPingTimeout = setTimeout @sendPing.bind(@), @service.heartbeat || PING_INTERVAL
 
     pongDidTimeout: ->
         log.e "[Connection.pongDidTimeout] #{helpers.summarizeConnection(@)}"
