@@ -95,6 +95,7 @@ module.exports = class Binding extends EventEmitter
 
         @send client_id, {
             id: message.id
+            kind: 'pong'
             pong
         }
 
