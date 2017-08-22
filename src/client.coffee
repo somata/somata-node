@@ -17,6 +17,7 @@ class Client extends EventEmitter
     service_connections: {}
 
     constructor: (options={}) ->
+        super()
         Object.assign @, options
 
         @connectToRegistry()

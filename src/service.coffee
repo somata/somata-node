@@ -22,6 +22,7 @@ module.exports = class SomataService extends EventEmitter
     # --------------------------------------------------------------------------
 
     constructor: (@name, @methods={}, options={}) ->
+        super()
         @id = @name + '~' + helpers.randomString()
 
         # Determine options
@@ -93,7 +94,8 @@ module.exports = class SomataService extends EventEmitter
                 log.e '[Service.handleMethod] ERROR:' + err
                 console.error e.stack
                 @sendError client_id, message.id, err
-# Method not found for this service
+
+        # Method not found for this service
         else
             log.e '[Service.handleMethod] ERROR: No method ' + message.method
             @sendError client_id, message.id, "No method " + message.method
@@ -193,6 +195,7 @@ module.exports = class SomataService extends EventEmitter
         service_instance =
             id: @id
             name: @name
+            heartbeat: @heartbeat
             proto: @binding.proto
             host: @binding.host
             port: @binding.port

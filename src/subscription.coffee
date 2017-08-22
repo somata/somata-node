@@ -6,6 +6,7 @@ VERBOSE = parseInt process.env.SOMATA_VERBOSE || 0
 
 class Subscription extends EventEmitter
     constructor: (options={}) ->
+        super()
         Object.assign @, options
         @id ||= @type + '~' + helpers.randomString()
 

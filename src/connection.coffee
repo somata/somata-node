@@ -31,6 +31,7 @@ module.exports = class Connection extends EventEmitter
     # `host`, and `port`, and connects to that address.
 
     constructor: (options={}) ->
+        super()
         Object.assign @, options
 
         @id ||= helpers.randomString()

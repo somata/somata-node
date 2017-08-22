@@ -16,6 +16,7 @@ module.exports = class Binding extends EventEmitter
     known_pings: {}
 
     constructor: (options={}) ->
+        super()
         Object.assign @, options
 
         @id ||= helpers.randomString()
