@@ -57,8 +57,8 @@ class Client extends EventEmitter
             if connection?
                 connection.method method, args..., cb
             else
-                log.e "[Client.remote] No connection for #{service}"
-                cb 'No connection'
+                log.e "[Client.remote] No connection to #{service}"
+                cb "No connection to #{service}"
 
     subscribe: (service, type, args..., cb) ->
         if arguments.length == 1 # options containing cb
