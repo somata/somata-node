@@ -1,4 +1,4 @@
-zmq = require 'zmq'
+zmq = require 'zeromq'
 util = require 'util'
 {EventEmitter} = require 'events'
 helpers = require './helpers'

@@ -32,6 +32,6 @@
     "request": "2.x.x",
     "underscore": "1.x.x",
     "usage": "^0.7.1",
-    "zmq": "2.15.x"
+    "zeromq": "4.6.0"
   }
 }
