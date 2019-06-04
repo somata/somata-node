@@ -1,0 +1,28 @@
+{
+  "name": "somata",
+  "version": "0.4.0",
+  "description": "Microservices framework for Node.js",
+  "homepage": "http://github.com/somata/somata-node",
+  "author": {
+    "name": "Sean Robertson",
+    "company": "Prontotype",
+    "url": "http://prontotype.us/"
+  },
+  "license": "MIT",
+  "keywords": [
+    "somata",
+    "microservice",
+    "distributed"
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "coffee --bare -o lib -c src"
+  },
+  "dependencies": {
+    "axios": "^0.18.0",
+    "express": "^4.17.1",
+    "express-ws": "^4.0.0",
+    "uuid": "^3.3.2",
+    "ws": "^7.0.0"
+  }
+}
