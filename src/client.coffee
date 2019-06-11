@@ -97,6 +97,8 @@ module.exports = class Client
         new Promise (resolve, reject) =>
             @ws.on 'open', ->
                 resolve true
+            @ws.on 'error', (err) ->
+                reject err
 
     handleWsMessage: (message_json) =>
         message = JSON.parse message_json
