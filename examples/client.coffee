@@ -1,6 +1,6 @@
 somata = require '../src'
 
-client = new somata.Client 'hello'
+client = new somata.Client 'examples:hello'
 
 main = ->
     try
