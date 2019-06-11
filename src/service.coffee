@@ -2,11 +2,16 @@ express = require 'express'
 express_ws = require 'express-ws'
 uuid = require 'uuid'
 debug = require('debug')('somata.service')
+{reverse} = require './helpers'
 
 PORT = process.env.SOMATA_PORT or 8000
 
 module.exports = class Service
-    constructor: (name, @methods) ->
+    constructor: (@service, @methods) ->
+        if @service.match ':'
+            debug "Warning: Deprecated service identifier: '#{@service}'"
+            @service = reverse(@service.split(':')).join('.')
+            debug "Service identifier updated to '#{@service}'"
 
         app = express()
         express_ws(app)
@@ -17,7 +22,7 @@ module.exports = class Service
 
         app.post '/:method.json', @handlePostRequest.bind(@)
 
-        app.ws '/', (ws, req) =>
+        app.ws '/ws', (ws, req) =>
             ws.on 'message', (message_json) =>
                 message = JSON.parse message_json
                 if message.method?

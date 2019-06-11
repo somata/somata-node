@@ -3,6 +3,7 @@ WS = require 'ws'
 uuid = require 'uuid'
 Activator = require './activator'
 debug = require('debug')('somata.client')
+{reverse} = require './helpers'
 
 DEFAULT_REQUEST = 'ws' # 'post'
 REQUEST = process.env.SOMATA_REQUEST or DEFAULT_REQUEST
@@ -10,18 +11,27 @@ REQUEST = process.env.SOMATA_REQUEST or DEFAULT_REQUEST
 DEFAULT_CONFIG =
     timeout: 100
 
+URL_SUFFIX = process.env.SOMATA_URL_SUFFIX or ''
+
 module.exports = class Client
     constructor: (@service, @config=DEFAULT_CONFIG) ->
+        if @service.match ':'
+            debug "Warning: Deprecated service identifier: #{@service}"
+            @service = reverse(@service.split(':')).join('.')
+            debug "Service identifier updated to #{@service}"
         @ws_activator = new Activator @activateWs.bind(@)
 
-    # TODO: Construct URL from service name
-    requestUrl: (method) ->
-        # "http://#{@service}/#{method}.json"
-        "http://localhost:8000/#{method}.json"
+    baseUrl: ->
+        if URL_SUFFIX?.length
+            [@service, URL_SUFFIX].join '.'
+        else
+            @service
 
-    # TODO: Construct URL from service name
+    requestUrl: (method) ->
+        "http://#{@baseUrl()}/#{method}.json"
+
     websocketUrl: ->
-        'ws://localhost:8000/'
+        "ws://#{@baseUrl()}/ws"
 
     # Requests
     # --------------------------------------------------------------------------
