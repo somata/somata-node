@@ -2,7 +2,7 @@ axios = require 'axios'
 WS = require 'ws'
 uuid = require 'uuid'
 Activator = require './activator'
-debug = require('debug')('somata.client')
+debug = require('debug')('somata:client')
 {reverse} = require './helpers'
 
 DEFAULT_REQUEST = 'ws' # 'post'

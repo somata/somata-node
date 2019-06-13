@@ -1,5 +1,5 @@
 EventEmitter = require 'events'
-debug = require('debug')('somata.activator')
+debug = require('debug')('somata:activator')
 
 # Activator
 # An object that can be used to wait for some function to complete

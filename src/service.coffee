@@ -1,7 +1,7 @@
 express = require 'express'
 express_ws = require 'express-ws'
 uuid = require 'uuid'
-debug = require('debug')('somata.service')
+debug = require('debug')('somata:service')
 {reverse} = require './helpers'
 
 PORT = process.env.SOMATA_PORT or 8000
