@@ -52,8 +52,6 @@ module.exports = class Client
         try
             response = await axios.post url, message, config
             return response.data.response
-
-        # Error handling
         catch err
             # Error response from service
             if error = err.response?.data?.error
@@ -70,13 +68,13 @@ module.exports = class Client
 
     # Websocket requests and subscriptions
     # --------------------------------------------------------------------------
+    # TODO: Purge completed and expired requests
+    # TODO: Purge and error-out (and re-send?) requests after a disconnect
+    # TODO: Subscriptions
+
     # To implement request/reply logic with websocket messages, we keep track of
     # @ws_requests which maps each request message ID to a Promise. A response
     # with a matching message ID will resolve that promise.
-    # 
-    # TODO: Purge completed and expired requests
-    # TODO: Handle disconnects
-    # TODO: Subscriptions
 
     wsRequest: (method, args...) ->
         await @ws_activator.isActive()
@@ -93,7 +91,8 @@ module.exports = class Client
     activateWs: ->
         @ws_requests = {}
         @ws = new WS @websocketUrl()
-        @ws.on 'message', @handleWsMessage
+        @ws.on 'message', @onWsMessage
+        @ws.on 'close', @onWsClose
         new Promise (resolve, reject) =>
             @ws.on 'open', ->
                 resolve true
@@ -104,4 +103,6 @@ module.exports = class Client
         message = JSON.parse message_json
         {id} = message
         @ws_requests[id](message.response)
-
+    onWsClose: =>
+        debug '[onWsClose]'
+        @ws_activator.deactivate()

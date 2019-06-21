@@ -31,6 +31,10 @@ module.exports = class Activator
         catch err
             @emitter.emit 'error', err
 
+    deactivate: ->
+        @is_activating = false
+        @is_activated = false
+
     onActivated: ->
         debug '[onActivated]'
         @emitter.emit 'active'
