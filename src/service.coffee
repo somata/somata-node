@@ -13,6 +13,8 @@ module.exports = class Service
             @service = reverse(@service.split(':')).join('.')
             debug "Warning: Deprecated service identifier #{deprecated_service} updated to #{@service}"
 
+        @subscriptions = {}
+
         app = express()
         express_ws(app)
 
@@ -20,23 +22,60 @@ module.exports = class Service
             limit: '7MB'#, verify: rawBodySaver
         }
 
-        app.post '/:method.json', @handlePostRequest.bind(@)
+        app.post '/:method.json', @onPostRequest.bind(@)
 
         app.ws '/ws', (ws, req) =>
             ws.on 'message', (message_json) =>
                 message = JSON.parse message_json
                 if message.method?
-                    @handleWsRequest ws, message
+                    @onWsRequest ws, message
+                else if message.event?
+                    @onWsSubscribe ws, message
 
         app.listen PORT, ->
             debug "Listening on :#{PORT}"
 
-    handlePostRequest: (req, res) ->
+    # Handing subscriptions
+    # --------------------------------------------------------------------------
+
+    # Subscriptions (currently ond only by websockets) are stored in
+    # @subscriptions as event -> [{id, sendEvent}]. When an event is published
+    # all clients who were subscribed are sent the event.
+
+    onWsSubscribe: (ws, message) ->
+        debug '[onWsSubscribe]', message
+        {id, event, args} = message
+        # TODO: try/catch
+        sendEvent = (event_message) ->
+            debug '[sendEvent]', event_message
+            event_message_json = JSON.stringify event_message
+            ws.send event_message_json
+        @onSubscribe id, event, args, sendEvent
+        ws.on 'close', @onUnsubscribe.bind @, event, args, sendEvent
+
+    onSubscribe: (id, event, args, sendEvent) ->
+        @subscriptions[event] ||= []
+        @subscriptions[event].push {id, sendEvent}
+
+    onUnsubscribe: (event, args, sendEvent) ->
+        @subscriptions[event] = @subscriptions[event].filter (subscribed) ->
+            subscribed.sendEvent != sendEvent
+
+    publish: (event, args...) ->
+        if @subscriptions[event]?.length
+            for {id, sendEvent} in @subscriptions[event]
+                event_message = {id, event, args}
+                sendEvent event_message
+
+    # Handling requests
+    # --------------------------------------------------------------------------
+
+    onPostRequest: (req, res) ->
         {method} = req.params
         {args} = req.body
 
         try
-            response = await @handleMethod method, args
+            response = await @onMethod method, args
             debug '[response]', response
             res.status 200
             res.json {response}
@@ -45,13 +84,13 @@ module.exports = class Service
             res.status 500
             res.json {error: err}
 
-    handleWsRequest: (ws, message) ->
+    onWsRequest: (ws, message) ->
         {method, args} = message
         # TODO: try/catch
-        response = await @handleMethod method, args
+        response = await @onMethod method, args
         response_json = JSON.stringify {response, id: message.id}
         ws.send response_json
 
-    handleMethod: (method, args) ->
+    onMethod: (method, args) ->
         @methods[method](args)
 
