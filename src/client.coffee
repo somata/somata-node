@@ -5,25 +5,27 @@ Activator = require './activator'
 debug = require('debug')('somata:client')
 {reverse} = require './helpers'
 
+# TODO: Check environment variables are valid
+
 DEFAULT_REQUEST = 'ws' # 'post'
 REQUEST = process.env.SOMATA_REQUEST or DEFAULT_REQUEST
 
 DEFAULT_CONFIG =
     timeout: 100
 
-URL_SUFFIX = process.env.SOMATA_URL_SUFFIX or ''
+DNS_SUFFIX = process.env.SOMATA_DNS_SUFFIX or ''
 
 module.exports = class Client
     constructor: (@service, @config=DEFAULT_CONFIG) ->
         if @service.match ':'
-            debug "Warning: Deprecated service identifier: #{@service}"
+            deprecated_service = @service
             @service = reverse(@service.split(':')).join('.')
-            debug "Service identifier updated to #{@service}"
+            debug "Warning: Deprecated service identifier #{deprecated_service} updated to #{@service}"
         @ws_activator = new Activator @activateWs.bind(@)
 
     baseUrl: ->
-        if URL_SUFFIX?.length
-            [@service, URL_SUFFIX].join '.'
+        if DNS_SUFFIX?.length
+            [@service, DNS_SUFFIX].join '.'
         else
             @service
 
@@ -35,6 +37,9 @@ module.exports = class Client
 
     # Requests
     # --------------------------------------------------------------------------
+
+    # Depending on the SOMATA_REQUEST environment variable, a request will use
+    # either a HTTP POST or Websocket
 
     request: (method, args...) ->
         if REQUEST == 'post'

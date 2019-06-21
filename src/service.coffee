@@ -9,9 +9,9 @@ PORT = process.env.SOMATA_PORT or 8000
 module.exports = class Service
     constructor: (@service, @methods) ->
         if @service.match ':'
-            debug "Warning: Deprecated service identifier: '#{@service}'"
+            deprecated_service = @service
             @service = reverse(@service.split(':')).join('.')
-            debug "Service identifier updated to '#{@service}'"
+            debug "Warning: Deprecated service identifier #{deprecated_service} updated to #{@service}"
 
         app = express()
         express_ws(app)
