@@ -15,6 +15,10 @@
     "distributed"
   ],
   "main": "lib/index.js",
+  "files": [
+    "/lib",
+    "/README.md"
+  ],
   "scripts": {
     "build": "coffee --bare -o lib -c src"
   },
