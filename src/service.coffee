@@ -73,6 +73,7 @@ module.exports = class Service
     onPostRequest: (req, res) ->
         {method} = req.params
         {args} = req.body
+        debug '[request]', method, args
 
         try
             response = await @onMethod method, args
@@ -92,5 +93,5 @@ module.exports = class Service
         ws.send response_json
 
     onMethod: (method, args) ->
-        @methods[method](args)
+        @methods[method](args...)
 
