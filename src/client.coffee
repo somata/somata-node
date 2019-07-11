@@ -110,10 +110,13 @@ module.exports = class Client
 
     wsRequest: (method, args...) ->
         id = uuid()
-        @sendWsMessage {id, method, args}
 
         return new Promise (resolve, reject) =>
-            @ws_requests[id] = resolve
+            try
+                await @sendWsMessage {id, method, args}
+            catch err
+                reject err
+            @ws_requests[id] = [resolve, reject]
 
     sendWsMessage: (message) ->
         debug '[sendWsMessage]', message
@@ -131,7 +134,7 @@ module.exports = class Client
 
     wsSubscribe: (event, args...) ->
         id = uuid()
-        @sendWsMessage {id, event, args}
+        await @sendWsMessage {id, event, args}
 
         subscription = new Subscription
         @ws_subscriptions[id] = subscription

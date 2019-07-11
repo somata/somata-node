@@ -6,19 +6,18 @@ exports.reverse = (l) ->
 
 exports.toPromise = (fn) ->
     return (args...) ->
-        console.log '[args]', args
         new Promise (resolve, reject) ->
-            console.log '[calling]', args
-            fn args..., (err, result) ->
-                console.log '[err,result]', err,result
-                if err
-                    reject err
-                else
-                    resolve result
+            try
+                fn args..., (err, result) ->
+                    if err
+                        reject err
+                    else
+                        resolve result
+            catch err
+                reject err
 
 exports.toPromises = (fns) ->
     as_promises = {}
     for key, fn of fns
-        console.log '[key]', key
         as_promises[key] = exports.toPromise fn
     return as_promises
