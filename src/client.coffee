@@ -21,24 +21,30 @@ DEFAULT_CONFIG =
 DNS_SUFFIX = process.env.SOMATA_DNS_SUFFIX or ''
 
 interpretConnectionError = (service, base_domain, err) ->
-    # Don't attempt to interpret error
+    # Don't attempt to interpret error if using THROW_ORIGINAL passthrough
     if THROW_ORIGINAL
         throw err
+
     # Error response from service
     if error = err.response?.data?.error
         throw error
+
     # Service not found (DNS error)
     else if err.code == 'ENOTFOUND'
         throw "Could not resolve #{base_domain} (is the DNS suffix '#{DNS_SUFFIX}' correct?)"
+
     # Connection refused (found but not mounted)
     else if err.code == 'ECONNREFUSED'
         throw "Could not connect to service #{service}, is it running?"
+
     # Connection aborted (timeout)
     else if err.code == 'ECONNABORTED'
         throw "Request to service #{service} timed out"
+
     # Generic HTTP error
     else if err.request? and err.response?
         throw "Request to #{err.config.url} failed with status #{err.response.status}: #{err.response.statusText}"
+
     # Unknown error (TODO: handle more specific errors)
     else
         console.log '[err.message]', err.message
