@@ -151,17 +151,22 @@ module.exports = class Client
 
     onWsMessage: (message_json) =>
         message = JSON.parse message_json
-        {id, response, event} = message
+        {id, response, event, error} = message
         if response
-            if pending_request = @ws_requests[id]
+            if [pending_request, _] = @ws_requests[id]
                 pending_request(message.response)
             else
-                debug "Warning: No pending request for message #{id}"
+                debug "Warning: No pending request handler for message #{id}"
         else if event
             if pending_subscription = @ws_subscriptions[id]
                 pending_subscription.emit('event', message.args...)
             else
-                debug "Warning: No pending subscription for message #{id}"
+                debug "Warning: No subscription handler for message #{id}"
+        else if error
+            if [_, pending_error] = @ws_requests[id]
+                pending_error(message.error)
+            else
+                debug "Warning: No pending error handler for message #{id}"
         else
             console.log '[Unknown message]', message
 

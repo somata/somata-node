@@ -87,10 +87,13 @@ module.exports = class Service
 
     onWsRequest: (ws, message) ->
         {method, args} = message
-        # TODO: try/catch
-        response = await @onMethod method, args
-        response_json = JSON.stringify {response, id: message.id}
-        ws.send response_json
+        try
+            response = await @onMethod method, args
+            response_json = JSON.stringify {response, id: message.id}
+            ws.send response_json
+        catch err
+            error_json = JSON.stringify {error: err, id: message.id}
+            ws.send error_json
 
     onMethod: (method, args) ->
         @methods[method](args...)
