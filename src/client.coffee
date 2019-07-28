@@ -6,19 +6,18 @@ Subscription = require './subscription'
 debug = require('debug')('somata:client')
 {reverse, fromPromise} = require './helpers'
 
+try
+    config = require.main.require './somata.json'
+catch
+    config = {}
+
 # TODO: Check environment variables are valid
 
-DEFAULT_REQUEST = 'ws' # 'post'
-DEFAULT_SUBSCRIBE = 'ws'
-REQUEST = process.env.SOMATA_REQUEST or DEFAULT_REQUEST
-SUBSCRIBE = process.env.SOMATA_SUBSCRIBE or DEFAULT_SUBSCRIBE
-
-THROW_ORIGINAL = process.env.SOMATA_THROW_ORIGINAL or false
-
-DEFAULT_CONFIG =
-    timeout: 100
-
-DNS_SUFFIX = process.env.SOMATA_DNS_SUFFIX or ''
+REQUEST = process.env.SOMATA_REQUEST or config.request or 'ws'
+SUBSCRIBE = process.env.SOMATA_SUBSCRIBE or config.subscribe or 'ws'
+THROW_ORIGINAL = process.env.SOMATA_THROW_ORIGINAL or config.throw_original or false
+TIMEOUT = process.env.SOMATA_TIMEOUT or config.timeout or 3000
+DNS_SUFFIX = process.env.SOMATA_DNS_SUFFIX or config.dns_suffix or ''
 
 interpretConnectionError = (service, base_domain, err) ->
     # Don't attempt to interpret error if using THROW_ORIGINAL passthrough
@@ -51,7 +50,7 @@ interpretConnectionError = (service, base_domain, err) ->
         throw err
 
 module.exports = class Client
-    constructor: (@service, @config=DEFAULT_CONFIG) ->
+    constructor: (@service) ->
         if @service.match ':'
             deprecated_service = @service
             @service = reverse(@service.split(':')).join('.')
@@ -98,7 +97,7 @@ module.exports = class Client
         url = @requestUrl(method)
         id = uuid()
         message = {id, method, args}
-        config = {timeout: @config.timeout}
+        config = {timeout: TIMEOUT}
         debug '[postRequest]', message
 
         try

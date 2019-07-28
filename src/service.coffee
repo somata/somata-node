@@ -1,10 +1,16 @@
+fs = require 'fs'
 express = require 'express'
 express_ws = require 'express-ws'
 uuid = require 'uuid'
 debug = require('debug')('somata:service')
 {reverse} = require './helpers'
 
-PORT = process.env.SOMATA_PORT or 8000
+try
+    config = require.main.require './somata.json'
+catch
+    config = {}
+
+PORT = process.env.SOMATA_PORT or config.port or 8000
 
 module.exports = class Service
     constructor: (@service, @methods) ->
