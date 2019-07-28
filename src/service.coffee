@@ -3,7 +3,7 @@ express = require 'express'
 express_ws = require 'express-ws'
 uuid = require 'uuid'
 debug = require('debug')('somata:service')
-{reverse} = require './helpers'
+{reverse, errorToObj} = require './helpers'
 
 try
     config = require.main.require './somata.json'
@@ -98,9 +98,13 @@ module.exports = class Service
             response_json = JSON.stringify {response, id: message.id}
             ws.send response_json
         catch err
-            error_json = JSON.stringify {error: err, id: message.id}
-            ws.send error_json
+            if err instanceof Error
+                error_json = {error: errorToObj(err), id: message.id}
+            else
+                error_json = {error: err, id: message.id}
+            ws.send JSON.stringify error_json
 
     onMethod: (method, args) ->
+        debug '[onMethod]', method, args
         @methods[method](args...)
 

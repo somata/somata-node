@@ -4,7 +4,7 @@ uuid = require 'uuid'
 Activator = require './activator'
 Subscription = require './subscription'
 debug = require('debug')('somata:client')
-{reverse, fromPromise} = require './helpers'
+{reverse, errorToObj, fromPromise} = require './helpers'
 
 try
     config = require.main.require './somata.json'
@@ -19,34 +19,45 @@ THROW_ORIGINAL = process.env.SOMATA_THROW_ORIGINAL or config.throw_original or f
 TIMEOUT = process.env.SOMATA_TIMEOUT or config.timeout or 3000
 DNS_SUFFIX = process.env.SOMATA_DNS_SUFFIX or config.dns_suffix or ''
 
-interpretConnectionError = (service, base_domain, err) ->
+interpretConnectionError = (service, base_domain, err, prefix='') ->
     # Don't attempt to interpret error if using THROW_ORIGINAL passthrough
     if THROW_ORIGINAL
         throw err
 
     # Error response from service
     if error = err.response?.data?.error
-        throw error
+        if typeof error == 'string'
+            message = "#{prefix} #{error}"
+            throw message.trim()
+        else
+            throw error
 
     # Service not found (DNS error)
     else if err.code == 'ENOTFOUND'
-        throw "Could not resolve #{base_domain} (is the DNS suffix '#{DNS_SUFFIX}' correct?)"
+        message = "#{prefix} Could not resolve #{base_domain} (is the DNS suffix '#{DNS_SUFFIX}' correct?)"
+        throw message.trim()
 
     # Connection refused (found but not mounted)
     else if err.code == 'ECONNREFUSED'
-        throw "Could not connect to service #{service}, is it running?"
+        message = "#{prefix} Could not connect to service #{service}, is it running?"
+        throw message.trim()
 
     # Connection aborted (timeout)
     else if err.code == 'ECONNABORTED'
-        throw "Request to service #{service} timed out"
+        message = "#{prefix} Request to service #{service} timed out"
+        throw message.trim()
 
     # Generic HTTP error
     else if err.request? and err.response?
-        throw "Request to #{err.config.url} failed with status #{err.response.status}: #{err.response.statusText}"
+        throw "#{prefix} Request to #{err.config.url} failed with status #{err.response.status}: #{err.response.statusText}"
+        throw message.trim()
 
     # Unknown error (TODO: handle more specific errors)
     else
-        console.log '[err.message]', err.message
+        console.error '[err.message]', err.message
+        err = errorToObj err
+        if err.message?
+            err.message = "#{prefix} #{err.message}".trim()
         throw err
 
 module.exports = class Client
@@ -137,7 +148,7 @@ module.exports = class Client
         try
             await @ws_activator.isActive()
         catch err
-            interpretConnectionError @service, @baseUrl(), err
+            interpretConnectionError @service, @baseUrl(), err, "Error connecting to ws://#{@baseUrl()}:"
 
         message_json = JSON.stringify message
         @ws.send message_json
