@@ -100,6 +100,8 @@ module.exports = class Client
     subscribe: (event, args...) ->
         if SUBSCRIBE == 'ws'
             @wsSubscribe event, args...
+        else
+            console.error "Can't subscribe with #{SUBSCRIBE}"
 
     # HTTP requests
     # ------------------------------------------------------------------------------
@@ -169,24 +171,25 @@ module.exports = class Client
 
     onWsMessage: (message_json) =>
         message = JSON.parse message_json
-        {id, response, event, error} = message
-        if response
-            if pending_request = @ws_requests[id]
-                pending_request.resolve(message.response)
+        {id, type, data} = message
+        switch type
+            when 'response'
+                if pending_request = @ws_requests[id]
+                    pending_request.resolve(data)
+                else
+                    debug "Warning: No pending request handler for message #{id}"
+            when 'event'
+                if pending_subscription = @ws_subscriptions[id]
+                    pending_subscription.emit('event', data)
+                else
+                    debug "Warning: No subscription handler for message #{id}"
+            when 'error'
+                if pending_request = @ws_requests[id]
+                    pending_request.reject(data)
+                else
+                    debug "Warning: No pending error handler for message #{id}"
             else
-                debug "Warning: No pending request handler for message #{id}"
-        else if event
-            if pending_subscription = @ws_subscriptions[id]
-                pending_subscription.emit('event', message.args...)
-            else
-                debug "Warning: No subscription handler for message #{id}"
-        else if error
-            if pending_request = @ws_requests[id]
-                pending_request.reject(message.error)
-            else
-                debug "Warning: No pending error handler for message #{id}"
-        else
-            console.log '[Unknown message]', message
+                console.error "Unknown message type #{type}", message
 
     # Websocket helper methods
     # --------------------------------------------------------------------------

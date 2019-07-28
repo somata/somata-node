@@ -59,6 +59,7 @@ module.exports = class Service
         @onSubscribe id, event, args, sendEvent
         ws.on 'close', @onUnsubscribe.bind @, event, args, sendEvent
 
+    # TODO: Take args into consideration
     onSubscribe: (id, event, args, sendEvent) ->
         @subscriptions[event] ||= []
         @subscriptions[event].push {id, sendEvent}
@@ -67,10 +68,10 @@ module.exports = class Service
         @subscriptions[event] = @subscriptions[event].filter (subscribed) ->
             subscribed.sendEvent != sendEvent
 
-    publish: (event, args...) ->
+    publish: (event, data) ->
         if @subscriptions[event]?.length
             for {id, sendEvent} in @subscriptions[event]
-                event_message = {id, event, args}
+                event_message = {id, type: 'event', event, data}
                 sendEvent event_message
 
     # Handling requests
@@ -85,23 +86,23 @@ module.exports = class Service
             response = await @onMethod method, args
             debug '[response]', response
             res.status 200
-            res.json {response}
+            res.json {type: 'response', data: response}
 
         catch err
             res.status 500
-            res.json {error: err}
+            res.json {type: 'error', data: err}
 
     onWsRequest: (ws, message) ->
         {method, args} = message
         try
             response = await @onMethod method, args
-            response_json = JSON.stringify {response, id: message.id}
+            response_json = JSON.stringify {id: message.id, type: 'response', data: response}
             ws.send response_json
         catch err
             if err instanceof Error
-                error_json = {error: errorToObj(err), id: message.id}
+                error_json = {id: message.id, type: 'error', data: errorToObj(err)}
             else
-                error_json = {error: err, id: message.id}
+                error_json = {id: message.id, type: 'error', data: err}
             ws.send JSON.stringify error_json
 
     onMethod: (method, args) ->
