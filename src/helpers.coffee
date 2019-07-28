@@ -4,11 +4,11 @@ exports.reverse = (l) ->
         reversed.push l[i]
     return reversed
 
-exports.toPromise = (fn) ->
+exports.toPromise = (cb_fn) ->
     return (args...) ->
         new Promise (resolve, reject) ->
             try
-                fn args..., (err, result) ->
+                cb_fn args..., (err, result) ->
                     if err
                         reject err
                     else
@@ -16,8 +16,22 @@ exports.toPromise = (fn) ->
             catch err
                 reject err
 
-exports.toPromises = (fns) ->
+exports.fromPromise = (promise_fn, cb) ->
+    promise_fn()
+        .then (result) ->
+            cb null, result
+        .catch (err) ->
+            cb err
+
+exports.toPromises = (cb_fns) ->
     as_promises = {}
-    for key, fn of fns
-        as_promises[key] = exports.toPromise fn
+    for key, cb_fn of cb_fns
+        as_promises[key] = exports.toPromise cb_fn
     return as_promises
+
+exports.errorToObj = (err) ->
+    obj = {}
+    Object.getOwnPropertyNames(err).forEach (key) ->
+        obj[key] = err[key]
+    return obj
+

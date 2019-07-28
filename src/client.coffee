@@ -4,7 +4,7 @@ uuid = require 'uuid'
 Activator = require './activator'
 Subscription = require './subscription'
 debug = require('debug')('somata:client')
-{reverse} = require './helpers'
+{reverse, fromPromise} = require './helpers'
 
 # TODO: Check environment variables are valid
 
@@ -82,6 +82,9 @@ module.exports = class Client
         else if REQUEST == 'ws'
             @wsRequest method, args...
 
+    requestCb: (method, args..., cb) ->
+        fromPromise @request.bind(@, method, args...), cb
+
     # Currently only Websocket subscriptions are supported
 
     subscribe: (event, args...) ->
@@ -122,7 +125,12 @@ module.exports = class Client
                 await @sendWsMessage {id, method, args}
             catch err
                 reject err
-            @ws_requests[id] = [resolve, reject]
+            @ws_requests[id] = {resolve, reject}
+
+            setTimeout =>
+                delete @ws_requests[id]
+                reject "Timed out"
+            , TIMEOUT
 
     sendWsMessage: (message) ->
         debug '[sendWsMessage]', message
@@ -153,8 +161,8 @@ module.exports = class Client
         message = JSON.parse message_json
         {id, response, event, error} = message
         if response
-            if [pending_request, _] = @ws_requests[id]
-                pending_request(message.response)
+            if pending_request = @ws_requests[id]
+                pending_request.resolve(message.response)
             else
                 debug "Warning: No pending request handler for message #{id}"
         else if event
@@ -163,8 +171,8 @@ module.exports = class Client
             else
                 debug "Warning: No subscription handler for message #{id}"
         else if error
-            if [_, pending_error] = @ws_requests[id]
-                pending_error(message.error)
+            if pending_request = @ws_requests[id]
+                pending_request.reject(message.error)
             else
                 debug "Warning: No pending error handler for message #{id}"
         else
