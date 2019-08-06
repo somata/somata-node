@@ -20,7 +20,8 @@
     "/README.md"
   ],
   "scripts": {
-    "build": "coffee --bare -o lib -c src"
+    "build": "coffee --bare -o lib -c src",
+    "preversion": "npm run build && git add lib"
   },
   "dependencies": {
     "axios": "^0.18.0",
