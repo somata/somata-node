@@ -1,5 +1,8 @@
+Service = require './service'
+Client = require './client'
+MultiClient = require './multi-client'
+helpers = require './helpers'
+
 module.exports = {
-    Service: require './service'
-    Client: require './client'
-    helpers: require './helpers'
+    Service, Client, MultiClient, helpers
 }

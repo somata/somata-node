@@ -105,7 +105,7 @@ module.exports = class Service
                 error_json = {id: message.id, type: 'error', data: err}
             ws.send JSON.stringify error_json
 
-    onMethod: (method, args) ->
+    onMethod: (method, args=[]) ->
         debug '[onMethod]', method, args
         @methods[method](args...)
 
