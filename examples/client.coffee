@@ -8,20 +8,11 @@ delay = (n) ->
 
 trySubscribe = ->
     try
-        console.log 'try to subscribe'
         subscription = await client.subscribe('shout')
-        console.log 'subscribed?'
         subscription.on 'event', (n) ->
             console.log '[shout]', n
     catch err
-        console.log "can't subscribe", err
-
-tryOneRequest = ->
-    try
-        hello_jones = await client.request 'sayHello', 'jones'
-        console.log '[hello_jones]', hello_jones
-    catch err
-        console.log '[err]', err
+        console.error "Couldn't subscribe:", err
 
 tryRequests = ->
     try
@@ -38,13 +29,9 @@ tryRequests = ->
         console.log '[err]', err
 
 main = ->
-    console.log 'Waiting...'
-    await delay 500
-    # await trySubscribe()
-    await tryOneRequest()
-    # await tryRequests()
+    await trySubscribe()
+    await tryRequests()
 
-    console.log 'Done'
     process.exit()
 
 main()
