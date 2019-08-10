@@ -90,6 +90,8 @@ module.exports = class Service
 
         catch err
             res.status 500
+            if err instanceof Error
+                err = errorToObj err
             res.json {type: 'error', data: err}
 
     onWsRequest: (ws, message) ->
@@ -100,9 +102,8 @@ module.exports = class Service
             ws.send response_json
         catch err
             if err instanceof Error
-                error_json = {id: message.id, type: 'error', data: errorToObj(err)}
-            else
-                error_json = {id: message.id, type: 'error', data: err}
+                err = errorToObj err
+            error_json = {id: message.id, type: 'error', data: err}
             ws.send JSON.stringify error_json
 
     onMethod: (method, args=[]) ->

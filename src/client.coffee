@@ -115,7 +115,7 @@ module.exports = class Client
 
         try
             response = await axios.post url, message, config
-            return response.data.response
+            return response.data.data
         catch err
             interpretConnectionError @service, @baseUrl(), err
 
