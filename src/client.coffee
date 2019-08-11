@@ -6,18 +6,13 @@ Subscription = require './subscription'
 debug = require('debug')('somata:client')
 {reverse, errorToObj, fromPromise} = require './helpers'
 
-try
-    config = require.main.require './somata.json'
-catch
-    config = {}
-
 # TODO: Check environment variables are valid
 
-REQUEST = process.env.SOMATA_REQUEST or config.request or 'ws'
-SUBSCRIBE = process.env.SOMATA_SUBSCRIBE or config.subscribe or 'ws'
-THROW_ORIGINAL = process.env.SOMATA_THROW_ORIGINAL or config.throw_original or false
-TIMEOUT = process.env.SOMATA_TIMEOUT or config.timeout or 3000
-DNS_SUFFIX = process.env.SOMATA_DNS_SUFFIX or config.dns_suffix or ''
+REQUEST = process.env.SOMATA_REQUEST or 'ws'
+SUBSCRIBE = process.env.SOMATA_SUBSCRIBE or 'ws'
+THROW_ORIGINAL = process.env.SOMATA_THROW_ORIGINAL or false
+TIMEOUT = process.env.SOMATA_TIMEOUT or 3000
+DNS_SUFFIX = process.env.SOMATA_DNS_SUFFIX or ''
 
 interpretConnectionError = (service, base_domain, err, prefix='') ->
     # Don't attempt to interpret error if using THROW_ORIGINAL passthrough
