@@ -106,12 +106,13 @@ module.exports = class Client
         id = uuid()
         message = {id, method, args}
         config = {timeout: TIMEOUT}
-        debug '[postRequest]', message
+        debug '[postRequest]', @service, message
 
         try
             response = await axios.post url, message, config
             return response.data.data
         catch err
+            console.error '[wsRequest]', @service, @method, err
             interpretConnectionError @service, @baseUrl(), err
 
     # Websocket requests and subscriptions
@@ -131,16 +132,18 @@ module.exports = class Client
             try
                 await @sendWsMessage {id, method, args}
             catch err
+                console.error '[wsRequest]', @service, method, err
                 reject err
             @ws_requests[id] = {resolve, reject}
 
             setTimeout =>
                 delete @ws_requests[id]
+                console.error '[wsRequest] Timed out', @service, method
                 reject "Timed out"
             , TIMEOUT
 
     sendWsMessage: (message) ->
-        debug '[sendWsMessage]', message
+        debug '[sendWsMessage]', @service, message
 
         try
             await @ws_activator.isActive()
@@ -202,5 +205,5 @@ module.exports = class Client
                 reject err
 
     onWsClose: =>
-        debug '[onWsClose]'
+        debug '[onWsClose]', @service
         @ws_activator.deactivate()
