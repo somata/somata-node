@@ -134,13 +134,14 @@ module.exports = class Client
             catch err
                 console.error '[wsRequest]', @service, method, err
                 reject err
-            @ws_requests[id] = {resolve, reject}
 
-            setTimeout =>
+            timeout = setTimeout =>
                 delete @ws_requests[id]
                 console.error '[wsRequest] Timed out', @service, method
                 reject "Timed out"
             , TIMEOUT
+
+            @ws_requests[id] = {resolve, reject, timeout}
 
     sendWsMessage: (message) ->
         debug '[sendWsMessage]', @service, message
@@ -173,6 +174,7 @@ module.exports = class Client
         switch type
             when 'response'
                 if pending_request = @ws_requests[id]
+                    clearTimeout pending_request.timeout
                     pending_request.resolve(data)
                 else
                     debug "Warning: No pending request handler for message #{id}"
@@ -183,6 +185,7 @@ module.exports = class Client
                     debug "Warning: No subscription handler for message #{id}"
             when 'error'
                 if pending_request = @ws_requests[id]
+                    clearTimeout pending_request.timeout
                     pending_request.reject(data)
                 else
                     debug "Warning: No pending error handler for message #{id}"
