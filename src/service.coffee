@@ -83,7 +83,7 @@ module.exports = class Service
             res.json {type: 'response', data: response}
 
         catch err
-            console.error '[onPostRequest]', method, err
+            console.error '[onPostRequest Error]', method, err
             res.status 500
             if err instanceof Error
                 err = errorToObj err
@@ -91,13 +91,15 @@ module.exports = class Service
 
     onWsRequest: (ws, message) ->
         {method, args} = message
+
         try
             response = await @onMethod method, args
             debug '[response]', response
             response_json = JSON.stringify {id: message.id, type: 'response', data: response}
             ws.send response_json
+
         catch err
-            console.error '[onWsRequest]', method, err
+            console.error '[onWsRequest Error]', method, err
             if err instanceof Error
                 err = errorToObj err
             error_json = {id: message.id, type: 'error', data: err}

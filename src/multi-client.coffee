@@ -9,13 +9,14 @@ helpers = require './helpers'
 # services and has to manage disconnects, subscriptions, etc. Is the one to many
 # use case not significant enough to bother?
 
-# TODO: Cache connections instead of creating a new Client every time
-
 module.exports = class MultiClient
     constructor: ->
+        @clients = {}
 
     request: (service, method, args...) ->
-        new Client(service).request(method, args...)
+        if not (client = @clients[service])
+            @clients[service] = client = new Client(service)
+        client.request(method, args...)
 
     requestCb: (service, method, args..., cb) ->
         helpers.fromPromise @request.bind(@, service, method, args...), cb
